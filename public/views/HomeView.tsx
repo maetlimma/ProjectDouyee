@@ -1,79 +1,87 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { Shield, Zap, Sparkles, Cpu } from 'lucide-react';
+import { useCatalog } from '../catalog';
+
+const INDUSTRIES = [
+  { en: 'Logistic', th: 'โลจิสติกส์', zh: '物流' },
+  { en: 'Heavy Industry', th: 'อุตสาหกรรมหนัก', zh: '重工业' },
+  { en: 'Automotive', th: 'ยานยนต์', zh: '汽车' },
+  { en: 'Aviation', th: 'การบิน', zh: '航空' }
+];
+
+interface Slide {
+  key: string;
+  image: string;
+  caption?: string;
+  to?: string;
+}
 
 const HomeView: React.FC = () => {
-  const { t } = useI18n();
-  const navigate = useNavigate();
+  const { lang } = useI18n();
+  const { products } = useCatalog();
+  const [active, setActive] = useState(0);
 
-  const handleCategoryClick = (category: string) => {
-    navigate(`/products?category=${encodeURIComponent(category)}`);
-  };
+  // Brand shoe slide first, then one slide per product that has an image
+  const slides: Slide[] = [
+    { key: 'brand', image: '/assets/hero-shoe.jpg' },
+    ...products
+      .filter((p) => p.imagePaths && p.imagePaths.length > 0)
+      .slice(0, 5)
+      .map((p) => ({ key: p.id, image: p.imagePaths[0], caption: p.sku, to: `/products/${p.id}` }))
+  ];
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const timer = setInterval(() => setActive((i) => (i + 1) % slides.length), 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const current = active < slides.length ? active : 0;
 
   return (
-    <div className="container" style={{ paddingBottom: '3.5rem' }}>
-      {/* Hero Section */}
-      <section className="hero-slider">
-        <h2>{t('heroTitle')}</h2>
-        <p>{t('heroSubtitle')}</p>
-        <button 
-          onClick={() => navigate('/products')} 
-          className="btn btn-primary"
-          style={{ padding: '0.75rem 1.75rem', fontSize: '1rem', borderRadius: '9999px' }}
-        >
-          {t('viewCatalog')}
-        </button>
-      </section>
-
-      {/* Core Sectors */}
-      <section style={{ marginTop: '3.5rem' }}>
-        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, textAlign: 'center', marginBottom: '2rem' }}>
-          {t('coreBusiness')}
-        </h3>
-        
-        <div className="category-grid">
-          <div className="category-card" onClick={() => handleCategoryClick('SMT Equipment')}>
-            <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
-              <Cpu size={32} />
-            </div>
-            <h4 className="category-title">{t('smtTitle')}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('smtDesc')}
-            </p>
-          </div>
-
-          <div className="category-card" onClick={() => handleCategoryClick('Static Control')}>
-            <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
-              <Zap size={32} />
-            </div>
-            <h4 className="category-title">{t('esdTitle')}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('esdDesc')}
-            </p>
-          </div>
-
-          <div className="category-card" onClick={() => handleCategoryClick('Cleanroom Consumables')}>
-            <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
-              <Sparkles size={32} />
-            </div>
-            <h4 className="category-title">{t('cleanroomTitle')}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('cleanroomDesc')}
-            </p>
-          </div>
-
-          <div className="category-card" onClick={() => handleCategoryClick('Packaging')}>
-            <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
-              <Shield size={32} />
-            </div>
-            <h4 className="category-title">{t('packTitle')}</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('packDesc')}
-            </p>
-          </div>
+    <div>
+      <section className="site-banner">
+        <img src="/assets/hero-banner.jpg" alt="Eurostat, a member of Dou Yee" />
+        <div className="site-banner-industries">
+          {INDUSTRIES.map((ind, i) => (
+            <Link key={ind.en} to="/products" className={i === 0 ? 'first' : ''}>
+              {ind[lang] || ind.en}
+            </Link>
+          ))}
         </div>
       </section>
+
+      <section className="site-slider">
+        {slides.map((s, i) => {
+          const body = (
+            <>
+              <img src={s.image} alt={s.caption || 'Eurostat safety footwear'} />
+              {s.caption && <span className="site-hero-caption">{s.caption}</span>}
+            </>
+          );
+          const cls = `site-slide ${i === 0 ? 'brand' : ''} ${i === current ? 'active' : ''}`;
+          return s.to ? (
+            <Link key={s.key} to={s.to} className={cls}>{body}</Link>
+          ) : (
+            <div key={s.key} className={cls}>{body}</div>
+          );
+        })}
+      </section>
+
+      {slides.length > 1 && (
+        <div className="site-dots">
+          {slides.map((s, i) => (
+            <button
+              key={s.key}
+              type="button"
+              className={i === current ? 'active' : ''}
+              onClick={() => setActive(i)}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

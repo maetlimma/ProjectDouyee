@@ -1,333 +1,254 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate } from 'react-router-dom';
-import { I18nProvider, useI18n, LanguageDropdown } from './i18n';
+import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { I18nProvider, useI18n, Language } from './i18n';
 import HomeView from './views/HomeView';
 import ProductsView from './views/ProductsView';
 import ProductDetailView from './views/ProductDetailView';
 import ContactView from './views/ContactView';
-import { Key, Search, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
+import AboutView from './views/AboutView';
+import CataloguesView from './views/CataloguesView';
+import { useCatalog, inSector, CATALOGUES } from './catalog';
+import SeriesBadge from './SeriesBadge';
+import { Search, Key } from 'lucide-react';
 
-interface TaxonomySector {
-  id: string;
-  name: { en: string; zh: string; th: string };
-}
-
-
-
-// Global Command-Palette Search Modal Overlay
-const SearchModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+// Inline search pill with live SKU/title suggestions
+const HeaderSearch: React.FC = () => {
   const { lang } = useI18n();
   const navigate = useNavigate();
+  const { products } = useCatalog();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
-    setQuery('');
-    setResults([]);
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    const delayDebounce = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/products');
-        if (res.ok) {
-          const products = await res.json();
-          const q = query.toLowerCase();
-          const filtered = products.filter((p: any) => 
-            p.sku.toLowerCase().includes(q) ||
-            (p.title.en && p.title.en.toLowerCase().includes(q)) ||
-            (p.title.zh && p.title.zh.toLowerCase().includes(q)) ||
-            (p.title.th && p.title.th.toLowerCase().includes(q))
-          );
-          setResults(filtered.slice(0, 5));
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }, 150);
-
-    return () => clearTimeout(delayDebounce);
-  }, [query]);
-
-  // Handle keybindings for ESC key closing
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    const close = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose]);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
 
-  if (!isOpen) return null;
+  const q = query.trim().toLowerCase();
+  const results = q
+    ? products
+        .filter((p) => p.sku.toLowerCase().includes(q) || Object.values(p.title).some((v) => v && v.toLowerCase().includes(q)))
+        .slice(0, 6)
+    : [];
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!q) return;
+    setOpen(false);
+    navigate(`/products?search=${encodeURIComponent(query.trim())}`);
+  };
 
   return (
-    <div className="search-modal-backdrop" onClick={onClose}>
-      <div className="search-modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="search-modal-input-wrapper">
-          <Search size={18} className="search-modal-input-icon" />
-          <input 
-            ref={inputRef}
-            type="text" 
-            placeholder={lang === 'en' ? 'Type to search products...' : lang === 'zh' ? '输入以搜索产品...' : 'พิมพ์เพื่อค้นหาผลิตภัณฑ์...'} 
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="search-modal-input"
-          />
-          <button onClick={onClose} className="search-modal-close-btn" type="button">ESC</button>
-        </div>
-
-        <div className="search-modal-results">
-          {loading && (
-            <div className="search-modal-status">Searching...</div>
-          )}
-          {!loading && query.trim() && results.length === 0 && (
-            <div className="search-modal-status">No products found matching "{query}"</div>
-          )}
-          {!loading && !query.trim() && (
-            <div className="search-modal-status">Type to search for SKUs or titles...</div>
-          )}
+    <form className="site-search" onSubmit={submit} ref={boxRef} role="search">
+      <input
+        type="text"
+        value={query}
+        placeholder={lang === 'th' ? 'ค้นหา...' : lang === 'zh' ? '搜索...' : 'Search...'}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        aria-label="Search products"
+      />
+      <button type="submit" aria-label="Search">
+        <Search size={15} />
+      </button>
+      {open && results.length > 0 && (
+        <div className="site-search-results">
           {results.map((p) => (
-            <div 
-              key={p.id} 
-              className="search-modal-result-item"
+            <Link
+              key={p.id}
+              to={`/products/${p.id}`}
+              className="site-search-result"
               onClick={() => {
-                navigate(`/products/${p.id}`);
-                onClose();
+                setOpen(false);
+                setQuery('');
               }}
             >
-              <div>
-                <strong className="result-title">{p.title[lang] || p.title.en}</strong>
-                <span className="result-sku">SKU: {p.sku}</span>
-              </div>
-              <span className="result-dept">{p.department}</span>
-            </div>
+              <strong>{p.sku}</strong>
+              {p.title[lang] || p.title.en}
+            </Link>
           ))}
         </div>
-      </div>
+      )}
+    </form>
+  );
+};
+
+const LangSwitch: React.FC = () => {
+  const { lang, changeLanguage } = useI18n();
+  const options: { code: Language; label: string }[] = [
+    { code: 'th', label: 'TH' },
+    { code: 'en', label: 'EN' },
+    { code: 'zh', label: '中' }
+  ];
+  return (
+    <div className="site-lang">
+      {options.map((o, i) => (
+        <React.Fragment key={o.code}>
+          {i > 0 && <span>/</span>}
+          <button type="button" className={lang === o.code ? 'active' : ''} onClick={() => changeLanguage(o.code)}>
+            {o.label}
+          </button>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
+
+// Products tab with hover mega menu: one column per sector listing its SKUs
+const ProductsMenu: React.FC = () => {
+  const { lang, t } = useI18n();
+  const location = useLocation();
+  const { products, sectors } = useCatalog();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => setOpen(false), [location]);
+
+  return (
+    <div
+      className={`site-nav-item ${open ? 'open' : ''}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <NavLink to="/products" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>
+        {t('products')}
+      </NavLink>
+      {open && sectors.length > 0 && (
+        <div className="site-mega" style={{ ['--mega-cols' as string]: Math.min(sectors.length, 4) } as React.CSSProperties}>
+          {sectors.map((sector) => {
+            const items = products.filter((p) => inSector(p, sector));
+            return (
+              <div key={sector.id} className="site-mega-col">
+                <Link to={`/products?category=${encodeURIComponent(sector.id)}`} className="site-mega-head">
+                  <SeriesBadge sector={sector} />
+                  <span>{sector.name[lang] || sector.name.en}</span>
+                </Link>
+                <ul className="site-mega-list">
+                  {items.map((p) => (
+                    <li key={p.id}>
+                      <Link to={`/products/${p.id}`}>{p.sku}</Link>
+                    </li>
+                  ))}
+                  {items.length === 0 && <li className="site-mega-empty">-</li>}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
 const AppHeader: React.FC = () => {
-  const { lang, t, changeLanguage } = useI18n();
-  const [sectors, setSectors] = useState<TaxonomySector[]>([]);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
-
-  // Load sectors for products dropdown list
-  useEffect(() => {
-    const fetchTaxonomy = async () => {
-      try {
-        const res = await fetch('/api/taxonomy');
-        if (res.ok) {
-          const data = await res.json();
-          setSectors(data);
-        }
-      } catch (e) {
-        console.error('Error fetching taxonomy for header:', e);
-      }
-    };
-    fetchTaxonomy();
-  }, []);
-
-  // Keyboard shortcut listener for Ctrl+K / Cmd+K
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchModalOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const { lang, t } = useI18n();
+  const navClass = ({ isActive }: { isActive: boolean }) => `site-nav-link ${isActive ? 'active' : ''}`;
 
   return (
-    <>
-      <header className="header-bar">
-        {/* Left Side: Brand Logo */}
-        <Link to="/" className="header-brand" onClick={() => setMobileMenuOpen(false)}>
-          <div className="logo-badge">DY</div>
-          <div className="brand-text">
-            <h1>{lang === 'en' ? 'Dou Yee Enterprises' : lang === 'zh' ? '都宜企业' : 'บริษัท ดู ยี เอ็นเตอร์ไพรส์'}</h1>
-            <p>{lang === 'en' ? 'Unified Catalog Engine v2.0' : lang === 'zh' ? '统一目录引擎 v2.0' : 'ระบบแค็ตตาล็อกอุตสาหกรรม v2.0'}</p>
-          </div>
+    <header className="site-shell">
+      <div className="site-header">
+        <Link to="/" className="site-logo">
+          <span className="site-logo-text">EUROSTAT<sup>®</sup></span>
         </Link>
-
-
-
-        {/* Desktop Navigation Links */}
-        <nav className="header-nav desktop-only">
-          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
-            {t('home')}
-          </NavLink>
-          
-          <div className="nav-dropdown-container">
-            <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              {t('products')}
-            </NavLink>
-            <div className="nav-dropdown-menu">
-              {sectors.map(sector => (
-                <Link 
-                  key={sector.id} 
-                  to={`/products?category=${encodeURIComponent(sector.name.en)}`}
-                  className="nav-dropdown-item"
-                >
-                  {sector.name[lang] || sector.name.en}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            {t('contactUs')}
-          </NavLink>
-        </nav>
-
-        {/* Right Actions: Desktop language selection & Mobile Hamburger trigger */}
-        <div className="header-actions">
-          {/* Search button (icon only) - visible on both desktop and mobile */}
-          <button 
-            onClick={() => setSearchModalOpen(true)} 
-            className="header-search-icon-btn" 
-            title="Search"
-            type="button"
-          >
-            <Search size={18} />
-          </button>
-
-          <div className="desktop-only">
-            <LanguageDropdown />
-          </div>
-
-          {/* Hamburger toggle button */}
-          <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-            className="mobile-menu-toggle-btn mobile-only"
-            title="Menu"
-            type="button"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <div className="site-header-tools">
+          <HeaderSearch />
+          <LangSwitch />
         </div>
-      </header>
-
-      {/* Mobile Drawer Overlay Drawer (Atmeta responsive style) */}
-      {mobileMenuOpen && (
-        <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)}>
-          <div className="mobile-drawer-card" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-drawer-header">
-              <span style={{ fontWeight: 800, color: 'var(--primary)' }}>Navigation Menu</span>
-              <button 
-                onClick={() => setMobileMenuOpen(false)} 
-                style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer' }}
-                type="button"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <nav className="mobile-drawer-nav">
-              <Link to="/" className="mobile-drawer-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                {t('home')}
-              </Link>
-
-              {/* Products nested collapse */}
-              <div>
-                <button 
-                  onClick={() => setMobileProductsOpen(!mobileProductsOpen)}
-                  className="mobile-drawer-nav-item"
-                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none' }}
-                  type="button"
-                >
-                  <span>{t('products')}</span>
-                  {mobileProductsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-
-                {mobileProductsOpen && (
-                  <div className="mobile-drawer-nested-list">
-                    <Link to="/products" className="mobile-drawer-nested-item" onClick={() => setMobileMenuOpen(false)}>
-                      {lang === 'en' ? 'All Sectors' : lang === 'zh' ? '查看全部' : 'หมวดหมู่ทั้งหมด'}
-                    </Link>
-                    {sectors.map(sector => (
-                      <Link 
-                        key={sector.id} 
-                        to={`/products?category=${encodeURIComponent(sector.name.en)}`} 
-                        className="mobile-drawer-nested-item" 
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {sector.name[lang] || sector.name.en}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <Link to="/contact" className="mobile-drawer-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                {t('contactUs')}
-              </Link>
-            </nav>
-
-            {/* Mobile Inline language toggle options */}
-            <div className="mobile-drawer-footer">
-              <span className="mobile-drawer-label">Language / 语言:</span>
-              <div className="mobile-drawer-lang-row">
-                <button 
-                  onClick={() => { changeLanguage('en'); setMobileMenuOpen(false); }}
-                  className={`mobile-lang-btn ${lang === 'en' ? 'active' : ''}`}
-                  type="button"
-                >
-                  English
-                </button>
-                <button 
-                  onClick={() => { changeLanguage('zh'); setMobileMenuOpen(false); }}
-                  className={`mobile-lang-btn ${lang === 'zh' ? 'active' : ''}`}
-                  type="button"
-                >
-                  中文
-                </button>
-                <button 
-                  onClick={() => { changeLanguage('th'); setMobileMenuOpen(false); }}
-                  className={`mobile-lang-btn ${lang === 'th' ? 'active' : ''}`}
-                  type="button"
-                >
-                  ไทย
-                </button>
-              </div>
-            </div>
-          </div>
+      </div>
+      <nav className="site-nav">
+        <div className="site-nav-item">
+          <NavLink to="/" end className={navClass}>{t('home')}</NavLink>
         </div>
-      )}
-
-      {/* Global Command Search Overlay */}
-      <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
-    </>
+        <div className="site-nav-item">
+          <NavLink to="/about" className={navClass}>
+            {lang === 'th' ? 'เกี่ยวกับเรา' : lang === 'zh' ? '关于我们' : 'About us'}
+          </NavLink>
+        </div>
+        <ProductsMenu />
+        <div className="site-nav-item">
+          <NavLink to="/catalogues" className={navClass}>
+            {lang === 'th' ? 'แคตตาล็อก' : lang === 'zh' ? '产品目录' : 'Catalogues'}
+          </NavLink>
+        </div>
+        <div className="site-nav-item">
+          <NavLink to="/contact" className={navClass}>
+            {lang === 'th' ? 'ติดต่อเรา' : lang === 'zh' ? '联系我们' : 'Contact'}
+          </NavLink>
+        </div>
+      </nav>
+    </header>
   );
 };
 
+const MAP_QUERY = '75/27 Moo 11 Phaholyothin Rd, Khlong Nueng, Khlong Luang, Pathum Thani 12120';
+
 const AppFooter: React.FC = () => {
-  const { t } = useI18n();
+  const { lang } = useI18n();
+  const { sectors } = useCatalog();
+
   return (
-    <footer className="footer">
-      <div>
-        <span>{t('copyright')}</span>
-        <a href="/admin/login" className="footer-key-link" title="Admin Portal">
-          <Key size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-        </a>
+    <footer className="site-shell site-footer">
+      <img className="site-footer-logo" src="/assets/douyee-logo.png" alt="Dou Yee Enterprises" />
+      <div className="site-footer-grid">
+        <div>
+          <h4>Contact</h4>
+          <p>
+            DOU YEE ENTERPRISES (THAILAND) CO.,LTD<br />
+            75/27 Moo 11, Phaholyothin Rd, T.Klongnueng,<br />
+            A.Klongluang, Pathumthani 12120 , Thailand<br />
+            Tel: +662 529 0979<br />
+            E-mail : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
+          </p>
+          <p style={{ marginTop: '0.75rem' }}>
+            บริษัท ดาวี เอ็นเตอร์ไพรส์ (ประเทศไทย) จำกัด<br />
+            75/27 หมู่ที่ 11 ถนนพหลโยธิน ตำบลคลองหนึ่ง<br />
+            อำเภอคลองหลวง จังหวัดปทุมธานี 12120<br />
+            E-mail : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
+          </p>
+        </div>
+        <div>
+          <h4><Link to="/about" style={{ fontSize: 'inherit', color: 'inherit' }}>About us</Link></h4>
+          <iframe
+            className="site-footer-map"
+            title="Dou Yee Thailand location"
+            loading="lazy"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&t=k&z=15&output=embed`}
+          />
+        </div>
+        <div>
+          <h4>Products</h4>
+          <ul>
+            {sectors.map((s) => (
+              <li key={s.id}>
+                <Link to={`/products?category=${encodeURIComponent(s.id)}`}>{s.name[lang] || s.name.en}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4>Catalogues</h4>
+          <ul>
+            {CATALOGUES.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+          <p style={{ marginTop: '0.75rem' }}>
+            <Link to="/catalogues">&lt;more&gt;</Link>
+          </p>
+        </div>
       </div>
+      <p className="site-copyright">
+        Copyright DOU YEE ENTERPRISES (THAILAND) CO.,LTD. All rights reserved.
+        <a href="/admin/login" title="Admin Portal">
+          <Key size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
+        </a>
+      </p>
     </footer>
   );
 };
@@ -336,16 +257,22 @@ const App: React.FC = () => {
   return (
     <I18nProvider>
       <BrowserRouter>
-        <AppHeader />
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <Routes>
-            <Route path="/" element={<HomeView />} />
-            <Route path="/products" element={<ProductsView />} />
-            <Route path="/products/:id" element={<ProductDetailView />} />
-            <Route path="/contact" element={<ContactView />} />
-          </Routes>
-        </main>
-        <AppFooter />
+        <div className="site">
+          <AppHeader />
+          <main className="site-shell site-main">
+            <div className="site-panel">
+              <Routes>
+                <Route path="/" element={<HomeView />} />
+                <Route path="/about" element={<AboutView />} />
+                <Route path="/products" element={<ProductsView />} />
+                <Route path="/products/:id" element={<ProductDetailView />} />
+                <Route path="/catalogues" element={<CataloguesView />} />
+                <Route path="/contact" element={<ContactView />} />
+              </Routes>
+            </div>
+          </main>
+          <AppFooter />
+        </div>
       </BrowserRouter>
     </I18nProvider>
   );

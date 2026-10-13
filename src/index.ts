@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { jwt } from '@elysiajs/jwt';
 import { staticPlugin } from '@elysiajs/static';
-import { join } from 'path';
+import { join, basename } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { initDb, getUsers, getProducts, saveProducts, Product, getTaxonomy, saveTaxonomy } from './db';
 
@@ -36,6 +36,22 @@ interface OtpChallenge {
 }
 const otpStore = new Map<string, OtpChallenge>();
 
+const ASSETS_DIR = join(PUBLIC_DIR, 'assets');
+
+// Serve a single file from a folder; names with path separators are rejected to block traversal
+function serveFile(dir: string, filename: string, set: { status?: number | string }) {
+  if (!filename || filename !== basename(filename) || filename.includes('\\') || filename.startsWith('.')) {
+    set.status = 404;
+    return 'File not found';
+  }
+  const file = Bun.file(join(dir, filename));
+  if (file.size === 0) {
+    set.status = 404;
+    return 'File not found';
+  }
+  return file;
+}
+
 // Elysia Application Setup
 const app = new Elysia()
   .use(cors())
@@ -46,15 +62,9 @@ const app = new Elysia()
     })
   )
   // Serve Dynamic Uploads bypassing static cache
-  .get('/uploads/:filename', ({ params: { filename }, set }) => {
-    console.log("MATCHED UPLOADS ROUTE:", filename);
-    const file = Bun.file(join(UPLOADS_DIR, filename));
-    if (file.size === 0) {
-      set.status = 404;
-      return 'File not found';
-    }
-    return file;
-  })
+  .get('/uploads/:filename', ({ params: { filename }, set }) => serveFile(UPLOADS_DIR, filename, set))
+  // Serve public site artwork
+  .get('/assets/:filename', ({ params: { filename }, set }) => serveFile(ASSETS_DIR, filename, set))
   .use(
     await staticPlugin({
       assets: PUBLIC_DIR,
