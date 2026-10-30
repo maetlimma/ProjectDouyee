@@ -1,6 +1,6 @@
 # Dou Yee Product API
 
-REST API for managing products, series and certificate types. The server uses ElysiaJS, PostgreSQL, `node-pg-migrate`, and host file storage. The existing admin login flow is retained: email/password creates a one-time code in the server log, and OTP verification returns a JWT.
+REST API for managing products, series, certificate types and catalogues. The server uses ElysiaJS, PostgreSQL, `node-pg-migrate`, and host file storage. The existing admin login flow is retained: email/password creates a one-time code in the server log, and OTP verification returns a JWT.
 
 ## Run locally
 
@@ -17,7 +17,7 @@ Local setup uses the same default PostgreSQL credentials as Docker Compose, so `
 - OpenAPI UI: `http://localhost:3000/swagger`
 - Health: `http://localhost:3000/health`
 - Admin login UI: `http://localhost:3000/admin/login`
-- Admin console: `http://localhost:3000/admin/dashboard` (Products, Series, Certificates)
+- Admin console: `http://localhost:3000/admin/dashboard` (Products, Series, Certificates, Catalogues)
 
 Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Development defaults are only for local use.
 
@@ -30,7 +30,7 @@ Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.
 
 The existing administrator account remains in `database/users.json`; login continues to verify its existing password hash. No admin user management endpoint is added.
 
-The admin console uses the v1 API: products are grouped by series, product forms edit the Product fields and certificate links, Series manages `SeriesType`, and Certificates manages `CertificateType`. Product image and PDF uploads use the API's multipart fields; audit history is shown from the API response.
+The admin console uses the v1 API: products are grouped by series, product forms edit the Product fields and certificate links, Series manages `SeriesType`, Certificates manages `CertificateType`, and Catalogues manages uploaded PDF records with search, pagination and sorting. Product and catalogue file uploads use the API's multipart fields; audit history is shown from the API response.
 
 ## Endpoints
 
@@ -60,6 +60,8 @@ For file upload, use `multipart/form-data`. Send ordinary metadata as form field
 - Deleting a certificate type referenced by a product returns a conflict. Removing a product also removes its certificate mapping rows.
 - `other`, `specification` and `size_weights` are JSONB objects; `other_image` is a JSONB array of stored file paths.
 - `certificate_codes` is the API input/output helper for the mapping table; it is not a column on `product`.
+
+Catalogue routes use `POST /api/v1/catalogue`, `PUT /api/v1/catalogue`, `GET /api/v1/catalogue?page=1&limit=20&sort=catalogue_name&order=asc&search=...`, and `DELETE /api/v1/catalogue`. Upload a PDF as `catalogue_pdf_file`; records return `catalogue_id`, `catalogue_name`, `catalogue_pdf`, `createTs`, `updateTs`, `createBy`, and `updateBy`. Catalogue PDFs are served through the authenticated `GET /api/v1/catalogue/:id/pdf` route.
 - The design did not specify product request serialization or delete payloads. This implementation accepts JSON or multipart form data for file-bearing writes and uses key fields in delete request bodies as shown above.
 - Audit fields use the authenticated admin email. PostgreSQL records creation and update timestamps in UTC.
 - Uploaded files are stored on the application host; use a persistent mounted volume for `FILE_STORAGE_DIR` in deployment.

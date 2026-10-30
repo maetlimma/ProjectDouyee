@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { Award, Box, LogOut, ShieldCheck, Layers3 } from 'lucide-react';
+import { Award, Box, LogOut, ShieldCheck, Layers3, BookOpen } from 'lucide-react';
 import { I18nProvider, LanguageDropdown } from './i18n';
 import LoginView from './views/LoginView';
-import { CertificatesManager, ProductEditor, ProductList, SeriesManager } from './views/AdminConsoleView';
+import { CataloguesManager, CertificatesManager, ProductEditor, ProductList, SeriesManager } from './views/AdminConsoleView';
 
 function AdminShell() {
   const location = useLocation();
@@ -43,7 +43,8 @@ function AdminShell() {
       <NavLink to="/dashboard" end className={({ isActive }) => `ac-nav-link ${isActive || location.pathname.startsWith('/products/') ? 'active' : ''}`}><Box size={17} /><span>Products</span></NavLink>
       <NavLink to="/series" className={({ isActive }) => `ac-nav-link ${isActive ? 'active' : ''}`}><Layers3 size={17} /><span>Series</span></NavLink>
       <NavLink to="/certificates" className={({ isActive }) => `ac-nav-link ${isActive ? 'active' : ''}`}><Award size={17} /><span>Certificates</span></NavLink>
-      <div className="ac-sidebar-bottom"><ShieldCheck size={16} /><span>Product, series and certificate records follow the API model.</span></div>
+      <NavLink to="/catalogues" className={({ isActive }) => `ac-nav-link ${isActive ? 'active' : ''}`}><BookOpen size={17} /><span>Catalogues</span></NavLink>
+      <div className="ac-sidebar-bottom"><ShieldCheck size={16} /><span>Manage products, series, certificates and catalogues.</span></div>
     </aside>}
     <main className={`ac-main ${isLogin ? 'login-main' : ''}`}>
       <Routes>
@@ -54,6 +55,7 @@ function AdminShell() {
         <Route path="/products/:id/edit" element={token ? <ProductEditor /> : <Navigate to="/login" replace />} />
         <Route path="/series" element={token ? <SeriesManager /> : <Navigate to="/login" replace />} />
         <Route path="/certificates" element={token ? <CertificatesManager /> : <Navigate to="/login" replace />} />
+        <Route path="/catalogues" element={token ? <CataloguesManager /> : <Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
       </Routes>
     </main>

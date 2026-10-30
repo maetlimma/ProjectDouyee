@@ -34,7 +34,7 @@ async function serveAsset(filename: string, set: { status?: number | string; hea
 export const app = new Elysia()
   .use(cors())
   .use(jwt({ name: 'jwt', secret: jwtSecret, exp: '12h' }))
-  .use(swagger({ documentation: { info: { title: 'Dou Yee Product API', version: '1.0.0', description: 'Product, series and certificate management API.' }, tags: [{ name: 'Auth' }, { name: 'Products' }, { name: 'Series' }, { name: 'Certificates' }], components: { securitySchemes: { BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } } } }))
+  .use(swagger({ documentation: { info: { title: 'Dou Yee Product API', version: '1.0.0', description: 'Product, series, certificate and catalogue management API.' }, tags: [{ name: 'Auth' }, { name: 'Products' }, { name: 'Series' }, { name: 'Certificates' }, { name: 'Catalogues' }], components: { securitySchemes: { BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } } } }))
   .onError(({ code, error, request, set }) => {
     if (code === 'VALIDATION') {
       set.status = 400;
