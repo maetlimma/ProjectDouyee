@@ -1,101 +1,88 @@
-# Dou Yee Clone Catalog Engine
+# Dou Yee Product API
 
-A premium fullstack corporate catalog and product taxonomy engine built to mirror the design aesthetics and capabilities of the official Dou Yee Enterprises website. Powered by a high-performance **Bun + ElysiaJS** backend and a responsive **React (TSX)** frontend.
+REST API for managing products, series and certificate types. The server uses ElysiaJS, PostgreSQL, `node-pg-migrate`, and host file storage. The existing admin login flow is retained: email/password creates a one-time code in the server log, and OTP verification returns a JWT.
 
----
+## Run locally
 
-## 🚀 Key Features
+Requirements: Bun and Docker Compose.
 
-### 1. Unified Fullstack Architecture
-- **ElysiaJS Backend:** Fast REST API routes with type-safe schema validation, JWT authentication, and native high-speed file upload endpoints.
-- **On-the-fly TSX Compilation:** Uses Bun's fast bundling capabilities to compile and serve React TSX modules directly to the client browser without a separate Webpack/Vite build step.
-- **Mock JSON Database:** Zero complex database configurations. Catalogs, categories, and user credentials are saved in flat JSON files inside the `/database` directory.
-
-### 2. Deep Content & Specifications Builders
-- **WYSIWYG Paragraph Blocks:** Custom uncontrolled `contentEditable` editors formatting paragraphs, sizes, fonts, and inline styles in real-time.
-- **Flexible Data Tables:** Dynamic table structure supporting localized table headers and customizable cell configurations.
-- **Advanced Technical Matrix:** Fully-fledged hierarchical specs sheet builder featuring Section Headers, Standard Key-Value pairs, and Split/Nested columns. Supports sequence reordering (ArrowUp/Down) to format spec sheets.
-
-### 3. Localization & Multi-Language Support
-- **Simultaneous Input:** Admins can write translations for **English (EN)**, **Chinese (简体中文 - ZH)**, and **Thai (ภาษาไทย - TH)** side-by-side on a single workspace, bypassing repetitive tab toggles.
-- **Dynamic Context Switcher:** The client-facing website changes language dynamically without page reloads using a centralized React context translator.
-
-### 4. Interactive UX Enhancements
-- **Breadcrumbs Trail:** Automatic hierarchical pathway context matching (`Home > Products > [Sector] > [Subcategory] > [Title]`).
-- **Tabbed Detail Sheets:** Interactive switching tabs (`Overview`, `Specifications`, `Downloads & Documents`) to structure catalog details neatly.
-- **Sales Funnel CTA:** Prominent inquiry button pre-populating contact forms with SKU code and localized product titles on redirection.
-- **Lightbox Image Viewer:** Fullscreen zoom overlays for high-resolution gallery inspects.
-- **Related Products Showcase:** Smart dynamic cards showing similar products sharing the same subcategory.
-
----
-
-## 🛠️ Tech Stack & Dependencies
-
-- **Runtime & Package Manager:** Bun (v1.3.14+)
-- **Server Framework:** ElysiaJS
-- **Frontend library:** React 19 (TypeScript)
-- **UI Icons:** Lucide-React
-- **State & Routing:** React Router DOM (v7)
-
----
-
-## 📂 Codebase Directory Layout
-
-```text
-ProjectDouyee/
-├── .agents/             # Agentic settings and project rules
-├── database/            # Local JSON database storage files
-│   ├── products.json    # Catalog records and specifications
-│   ├── taxonomy.json    # Nested Sector & Sub-category settings
-│   └── users.json       # Admin credentials
-├── public/              # Client SPA resources (Vite-free)
-│   ├── App.tsx          # Main Client Router & layout
-│   ├── adminApp.tsx     # Admin Dashboard SPA Router
-│   ├── index.css        # Vanilla CSS style system
-│   ├── i18n.tsx         # Translation utilities
-│   ├── views/           # Client and Admin views components
-│   └── uploads/         # Local folder storing media uploads
-├── src/                 # ElysiaJS Backend Server
-│   ├── index.ts         # Main server router & asset delivery
-│   └── db.ts            # Local database query models
-├── tests/               # Backend REST & frontend validation tests
-└── package.json         # Scripts and project configurations
-```
-
----
-
-## 🚦 Getting Started
-
-### 1. Installation
-Install project dependencies with Bun:
-```bash
+```powershell
 bun install
+bun run setup && bun run dev
 ```
 
-### 2. Run in Development Mode
-Start the development server with automatic file watching:
-```bash
-bun run dev
-```
-The application will start on: `http://localhost:3000`
+Local setup uses the same default PostgreSQL credentials as Docker Compose, so `.env` is optional. Copy `.env.example` to `.env` only when you want to override those defaults.
 
-### 3. Run Test Suite
-To run the automated suite of REST API and Translation unit tests:
-```bash
+- API: `http://localhost:3000/api/v1`
+- OpenAPI UI: `http://localhost:3000/swagger`
+- Health: `http://localhost:3000/health`
+- Admin login UI: `http://localhost:3000/admin/login`
+- Admin console: `http://localhost:3000/admin/dashboard` (Products, Series, Certificates)
+
+Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Development defaults are only for local use.
+
+## Authentication
+
+1. `POST /api/auth/login` with `{ "email": "admin@douyee.com", "password": "..." }`.
+2. Read the 6-digit OTP printed in the server console.
+3. `POST /api/auth/verify-otp` with the `challengeToken` and `otpCode` from those steps.
+4. Send `Authorization: Bearer <token>` to API endpoints.
+
+The existing administrator account remains in `database/users.json`; login continues to verify its existing password hash. No admin user management endpoint is added.
+
+The admin console uses the v1 API: products are grouped by series, product forms edit the Product fields and certificate links, Series manages `SeriesType`, and Certificates manages `CertificateType`. Product image and PDF uploads use the API's multipart fields; audit history is shown from the API response.
+
+## Endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| POST / PUT | `/api/v1/product` | Create or update a product |
+| GET | `/api/v1/product` | List products grouped by series |
+| DELETE | `/api/v1/product` | Delete using `{ "product_id": "..." }` |
+| GET | `/api/v1/product/{id}` | Get product and linked certificate codes |
+| GET | `/api/v1/product/{id}/datasheet` | Stream the datasheet PDF |
+| GET | `/api/v1/product/{id}/certificate` | Stream the certificate PDF |
+| POST / PUT / GET / DELETE | `/api/v1/series` | Create, update, list and delete series |
+| POST / PUT / GET / DELETE | `/api/v1/certificate` | Create, update, list and delete certificate types |
+
+Every endpoint under `/api/v1` requires the admin JWT. Product update uses `product_id` in the request body, and product/certificate deletion uses the resource key in the request body. Delete operations return HTTP 204 on success. Errors use `{ "error": { "code": "...", "message": "..." } }`.
+
+### Product request
+
+Product bodies use the API design's snake_case fields: `sku`, `product_name`, `series`, `brand`, `title`, `main_image`, `other_image`, `specification`, `size_weights`, `datasheet_pdf`, `certificate_pdf`, and `other`. `certificate_codes` is accepted to maintain the `CertificateProduct` mapping when creating or updating a product.
+
+For file upload, use `multipart/form-data`. Send ordinary metadata as form fields, JSON values (`other_image`, `specification`, `size_weights`, `other`, `certificate_codes`) as JSON strings, and file fields named `main_image_file`, `other_image_files` (repeat for multiple images), `datasheet_pdf_file`, or `certificate_pdf_file`. Certificate type create/update accepts `image_file`. Images are limited to 12 MiB and PDF files to 30 MiB. Files receive generated names and are stored in separate `storage/images` and `storage/documents` folders. File links require a JWT when fetched.
+
+## Database and assumptions
+
+- The initial migration creates `product`, `series_type`, `certificate_type`, and `certificate_product`, with foreign keys and audit fields. It seeds the three series and two certificate codes listed in the design brief.
+- A product has one series; deleting a series referenced by products returns a conflict.
+- Deleting a certificate type referenced by a product returns a conflict. Removing a product also removes its certificate mapping rows.
+- `other`, `specification` and `size_weights` are JSONB objects; `other_image` is a JSONB array of stored file paths.
+- `certificate_codes` is the API input/output helper for the mapping table; it is not a column on `product`.
+- The design did not specify product request serialization or delete payloads. This implementation accepts JSON or multipart form data for file-bearing writes and uses key fields in delete request bodies as shown above.
+- Audit fields use the authenticated admin email. PostgreSQL records creation and update timestamps in UTC.
+- Uploaded files are stored on the application host; use a persistent mounted volume for `FILE_STORAGE_DIR` in deployment.
+
+## Tests
+
+The test suite includes product validation unit tests and three API integration flows. Start PostgreSQL, run migrations, then run:
+
+```sh
 bun test
 ```
 
----
+Integration tests use the existing `admin@douyee.com` account and its default development password unless `TEST_ADMIN_PASSWORD` is set.
 
-## 🔐 Administrative Access & OTP
-To log into the Admin Workspace (`http://localhost:3000/admin`):
-1. Enter the admin credentials:
-   - **Email:** `admin@douyee.com`
-2. Submit the form to generate a One-Time Passcode (OTP).
-3. Check the **Bun Server Console Log** where the 6-digit OTP will be printed:
-   ```text
-   ======================================================
-   [ADMIN AUTH] OTP for admin@douyee.com: 123456
-   ======================================================
-   ```
-4. Enter the code to verify your session and obtain your JWT access token.
+## Project structure
+
+```text
+src/
+  db/pool.ts                 PostgreSQL connection pool
+  migrations/                node-pg-migrate schema
+  routes/v1.ts               Versioned REST controllers
+  services/                  Product, lookup, and file business logic
+  index.ts                   Elysia app, auth, Swagger and login UI routes
+tests/                       Product validation and API integration tests
+storage/                     Generated host-side upload storage (gitignored)
+```

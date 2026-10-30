@@ -1,429 +1,115 @@
 import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { jwt } from '@elysiajs/jwt';
+import { swagger } from '@elysiajs/swagger';
+import { randomUUID } from 'node:crypto';
+import { basename, join } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
-import { join, basename } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import { initDb, getUsers, getProducts, saveProducts, Product, getTaxonomy, saveTaxonomy } from './db';
+import { getUsers } from './legacy-auth-store';
+import { apiV1 } from './routes/v1';
+import { resolveStoredFile } from './services/files';
 
-// Initialize Database on startup
-await initDb();
-
-// Port configuration
-const PORT = process.env.PORT || 3000;
-
-// Uploads and Public directory configuration
-const PUBLIC_DIR = join(import.meta.dir, '../public');
-const UPLOADS_DIR = join(PUBLIC_DIR, 'uploads');
-const htmlPath = join(PUBLIC_DIR, 'index.html');
-const htmlBundle = await import(htmlPath);
-const adminHtmlPath = join(PUBLIC_DIR, 'admin.html');
-const adminHtmlBundle = await import(adminHtmlPath);
-
-// Ensure upload directory exists
-if (!existsSync(PUBLIC_DIR)) {
-  mkdirSync(PUBLIC_DIR, { recursive: true });
+const port = Number(process.env.PORT ?? 3000);
+const jwtSecret = process.env.JWT_SECRET ?? 'local-development-secret-change-me';
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  throw new Error('Set JWT_SECRET to a random value of at least 32 characters in production.');
 }
-if (!existsSync(UPLOADS_DIR)) {
-  mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+const challenges = new Map<string, { email: string; code: string; expiresAt: number }>();
+const assetsDir = join(import.meta.dir, '../public/assets');
 
-// Memory cache for OTP challenges (OTP: { email, code, expiresAt })
-interface OtpChallenge {
-  email: string;
-  code: string;
-  expiresAt: number;
-}
-const otpStore = new Map<string, OtpChallenge>();
-
-const ASSETS_DIR = join(PUBLIC_DIR, 'assets');
-
-// Serve a single file from a folder; names with path separators are rejected to block traversal
-function serveFile(dir: string, filename: string, set: { status?: number | string }) {
-  if (!filename || filename !== basename(filename) || filename.includes('\\') || filename.startsWith('.')) {
+async function serveAsset(filename: string, set: { status?: number | string; headers: Record<string, string | number> }) {
+  if (!filename || filename !== basename(filename) || filename.startsWith('.')) {
     set.status = 404;
-    return 'File not found';
+    return { error: { code: 'NOT_FOUND', message: 'Asset not found' } };
   }
-  const file = Bun.file(join(dir, filename));
-  if (file.size === 0) {
+  const file = Bun.file(join(assetsDir, filename));
+  if (!(await file.exists())) {
     set.status = 404;
-    return 'File not found';
+    return { error: { code: 'NOT_FOUND', message: 'Asset not found' } };
   }
+  set.headers['cache-control'] = 'public, max-age=86400';
   return file;
 }
 
-// Elysia Application Setup
-const app = new Elysia()
+export const app = new Elysia()
   .use(cors())
-  .use(
-    jwt({
-      name: 'jwt',
-      secret: 'douyee-super-secret-key-2026'
-    })
-  )
-  // Serve Dynamic Uploads bypassing static cache
-  .get('/uploads/:filename', ({ params: { filename }, set }) => serveFile(UPLOADS_DIR, filename, set))
-  // Serve public site artwork
-  .get('/assets/:filename', ({ params: { filename }, set }) => serveFile(ASSETS_DIR, filename, set))
-  .use(
-    await staticPlugin({
-      assets: PUBLIC_DIR,
-      prefix: '/',
-      noCache: true,
-      alwaysStatic: false
-    })
-  )
-  // Error handling middleware
-  .onError(({ code, error, set }) => {
-    console.error(`[SERVER ERROR] Code: ${code}, Message: ${error.message}`);
+  .use(jwt({ name: 'jwt', secret: jwtSecret, exp: '12h' }))
+  .use(swagger({ documentation: { info: { title: 'Dou Yee Product API', version: '1.0.0', description: 'Product, series and certificate management API.' }, tags: [{ name: 'Auth' }, { name: 'Products' }, { name: 'Series' }, { name: 'Certificates' }], components: { securitySchemes: { BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } } } }))
+  .onError(({ code, error, request, set }) => {
+    if (code === 'VALIDATION') {
+      set.status = 400;
+      const details = (error as any).all?.map((issue: any) => ({ field: String(issue.path ?? '').replace(/^\//, ''), message: issue.message })) ?? error.message;
+      return { error: { code: 'VALIDATION_ERROR', message: 'Request validation failed', details } };
+    }
+    if (code === 'NOT_FOUND') {
+      set.status = 404;
+      const path = new URL(request.url).pathname;
+      return { error: { code: 'NOT_FOUND', message: path.startsWith('/api/') ? `API route not found: ${request.method} ${path}` : 'Route not found' } };
+    }
+    console.error(error);
     set.status = 500;
-    return { success: false, error: error.message };
+    return { error: { code: 'INTERNAL_ERROR', message: 'An unexpected server error occurred' } };
   })
-  // Helper derived method to authenticate requests
-  .derive(({ jwt, request }) => {
-    return {
-      getAdminUser: async () => {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return null;
-        }
-        const token = authHeader.substring(7);
-        const payload = await jwt.verify(token);
-        if (!payload || !payload.userId) {
-          return null;
-        }
-        return payload;
-      }
-    };
-  })
-  // Public Endpoint: Retrieve the active category taxonomy
-  .get('/api/taxonomy', async () => {
-    return await getTaxonomy();
-  })
-  // Administrative Endpoint: Sync categories taxonomy
-  .post('/api/admin/taxonomy', async ({ body, getAdminUser, set }) => {
-    const admin = await getAdminUser();
-    if (!admin) {
+  .get('/health', () => ({ status: 'ok' }))
+  // Kept for the existing admin login UI: OTP is logged to the server console in local development.
+  .post('/api/auth/login', async ({ body, set }) => {
+    const users = await getUsers();
+    const user = users.find((entry) => entry.email.toLowerCase() === body.email.toLowerCase());
+    if (!user || !(await Bun.password.verify(body.password, user.passwordHash))) {
       set.status = 401;
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'Invalid email or password' };
     }
-    await saveTaxonomy(body as any);
-    return { success: true };
-  })
-  // Public Endpoint: Retrieve all visible products
-  .get('/api/products', async () => {
-    const products = await getProducts();
-    const now = new Date();
-    // Return only active products matching timing constraints
-    return products.filter((product) => {
-      if (product.status !== 'enabled') {
-        return false;
-      }
-      if (product.publishAt && new Date(product.publishAt) > now) {
-        return false;
-      }
-      if (product.expireAt && new Date(product.expireAt) < now) {
-        return false;
-      }
-      return true;
-    });
-  })
-  // Public Endpoint: Retrieve a single visible product by ID
-  .get('/api/products/:id', async ({ params: { id }, set }) => {
-    const products = await getProducts();
-    const product = products.find((p) => p.id === id);
-    if (!product) {
-      set.status = 404;
-      return { success: false, error: 'Product not found' };
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const challengeToken = randomUUID();
+    challenges.set(challengeToken, { email: user.email, code, expiresAt: Date.now() + 5 * 60_000 });
+    console.info(`[ADMIN AUTH] OTP for ${user.email}: ${code}`);
+    return { success: true, challengeToken, message: 'OTP code generated. Check server console.', ...(process.env.NODE_ENV === 'test' ? { testOtp: code } : {}) };
+  }, { body: t.Object({ email: t.String({ format: 'email' }), password: t.String({ minLength: 1 }) }), detail: { tags: ['Auth'] } })
+  .post('/api/auth/verify-otp', async ({ body, jwt, set }) => {
+    const challenge = challenges.get(body.challengeToken);
+    if (!challenge || challenge.expiresAt < Date.now()) {
+      challenges.delete(body.challengeToken);
+      set.status = 400;
+      return { success: false, error: 'Invalid or expired login challenge' };
     }
-    const now = new Date();
-    const isActive =
-      product.status === 'enabled' &&
-      (!product.publishAt || new Date(product.publishAt) <= now) &&
-      (!product.expireAt || new Date(product.expireAt) >= now);
-
-    if (!isActive) {
-      set.status = 403;
-      return { success: false, error: 'Product is currently not visible' };
-    }
-    return product;
-  })
-  // Auth: Email/Password login challenge
-  .post(
-    '/api/auth/login',
-    async ({ body: { email, password }, set }) => {
-      const users = await getUsers();
-      const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      if (!user) {
-        set.status = 401;
-        return { success: false, error: 'Invalid email or password' };
-      }
-
-      const match = await Bun.password.verify(password, user.passwordHash);
-      if (!match) {
-        set.status = 401;
-        return { success: false, error: 'Invalid email or password' };
-      }
-
-      // Generate a 6-digit random OTP code
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const challengeToken = crypto.randomUUID();
-      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiration
-
-      otpStore.set(challengeToken, {
-        email: user.email,
-        code: otpCode,
-        expiresAt
-      });
-
-      // Console logging for local authentication
-      console.log(`\n======================================================`);
-      console.log(`[ADMIN AUTH] OTP for ${user.email}: ${otpCode}`);
-      console.log(`[ADMIN AUTH] Challenge Token: ${challengeToken}`);
-      console.log(`[ADMIN AUTH] Expires in: 5 minutes`);
-      console.log(`======================================================\n`);
-
-      return {
-        success: true,
-        challengeToken,
-        message: 'OTP code generated. Check server console for log output.',
-        ...(process.env.NODE_ENV === 'test' ? { testOtp: otpCode } : {})
-      };
-    },
-    {
-      body: t.Object({
-        email: t.String(),
-        password: t.String()
-      })
-    }
-  )
-  // Auth: OTP code verification to issue JWT session token
-  .post(
-    '/api/auth/verify-otp',
-    async ({ body: { challengeToken, otpCode }, jwt, set }) => {
-      const challenge = otpStore.get(challengeToken);
-      if (!challenge) {
-        set.status = 400;
-        return { success: false, error: 'Invalid or expired login challenge' };
-      }
-
-      if (Date.now() > challenge.expiresAt) {
-        otpStore.delete(challengeToken);
-        set.status = 400;
-        return { success: false, error: 'Login challenge has expired' };
-      }
-
-      if (challenge.code !== otpCode) {
-        set.status = 401;
-        return { success: false, error: 'Incorrect OTP code entered' };
-      }
-
-      // Successful verification - clear OTP and issue JWT
-      otpStore.delete(challengeToken);
-      const token = await jwt.sign({
-        userId: challenge.email,
-        email: challenge.email
-      });
-
-      return {
-        success: true,
-        token,
-        email: challenge.email
-      };
-    },
-    {
-      body: t.Object({
-        challengeToken: t.String(),
-        otpCode: t.String()
-      })
-    }
-  )
-  // Protected Endpoint: Verify authentication state
-  .get('/api/auth/me', async ({ getAdminUser, set }) => {
-    const admin = await getAdminUser();
-    if (!admin) {
+    if (challenge.code !== body.otpCode) {
       set.status = 401;
-      return { success: false, error: 'Unauthorized session' };
+      return { success: false, error: 'Incorrect OTP code entered' };
     }
-    return { success: true, email: admin.email };
+    challenges.delete(body.challengeToken);
+    return { success: true, token: await jwt.sign({ userId: challenge.email, email: challenge.email }), email: challenge.email };
+  }, { body: t.Object({ challengeToken: t.String(), otpCode: t.String({ minLength: 6, maxLength: 6 }) }), detail: { tags: ['Auth'] } })
+  .get('/api/auth/me', async ({ request, jwt, set }) => {
+    const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    const user = token ? await jwt.verify(token) : false;
+    if (!user || !user.email) { set.status = 401; return { success: false, error: 'Unauthorized session' }; }
+    return { success: true, email: user.email };
+  }, { detail: { tags: ['Auth'] } })
+  .use(apiV1)
+  .all('/api/*', ({ request, set }) => {
+    set.status = 404;
+    return { error: { code: 'NOT_FOUND', message: `API route not found: ${request.method} ${new URL(request.url).pathname}` } };
   })
-  // Protected Admin Endpoint: Retrieve all products in ledger
-  .get('/api/admin/products', async ({ getAdminUser, set }) => {
-    const admin = await getAdminUser();
-    if (!admin) {
-      set.status = 401;
-      return { success: false, error: 'Unauthorized session' };
-    }
-    const products = await getProducts();
-    return products;
+  .get('/files/:folder/:filename', async ({ params, request, jwt, set }) => {
+    const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    if (!token || !(await jwt.verify(token))) { set.status = 401; return { error: { code: 'UNAUTHORIZED', message: 'A valid admin bearer token is required' } }; }
+    const path = resolveStoredFile(params.folder, params.filename);
+    if (!path || !(await Bun.file(path).exists())) { set.status = 404; return { error: { code: 'NOT_FOUND', message: 'File not found' } }; }
+    const ext = params.filename.split('.').pop()?.toLowerCase();
+    set.headers['content-type'] = ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    return Bun.file(path);
   })
-  // Protected Admin Endpoint: Retrieve single product for edit form
-  .get('/api/admin/products/:id', async ({ params: { id }, getAdminUser, set }) => {
-    const admin = await getAdminUser();
-    if (!admin) {
-      set.status = 401;
-      return { success: false, error: 'Unauthorized session' };
-    }
-    const products = await getProducts();
-    const product = products.find((p) => p.id === id);
-    if (!product) {
-      set.status = 404;
-      return { success: false, error: 'Product not found' };
-    }
-    return product;
-  })
-  // Protected Admin Endpoint: Create new product listing
-  .post(
-    '/api/products',
-    async ({ body, getAdminUser, set }) => {
-      const admin = await getAdminUser();
-      if (!admin) {
-        set.status = 401;
-        return { success: false, error: 'Unauthorized session' };
-      }
+  // Serve artwork directly from disk; the static SPA fallback must not turn asset requests into HTML.
+  .get('/assets/:filename', ({ params, set }) => serveAsset(params.filename, set))
+  .use(await staticPlugin({ assets: join(import.meta.dir, '../public'), prefix: '/', alwaysStatic: false }))
+  .get('/admin', await import(join(import.meta.dir, '../public/admin.html')).then((module) => module.default))
+  .get('/admin/*', await import(join(import.meta.dir, '../public/admin.html')).then((module) => module.default))
+  .get('/', await import(join(import.meta.dir, '../public/index.html')).then((module) => module.default))
+  .get('/*', await import(join(import.meta.dir, '../public/index.html')).then((module) => module.default));
 
-      const products = await getProducts();
-      const newProduct: Product = {
-        ...body,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString()
-      };
-
-      products.push(newProduct);
-      await saveProducts(products);
-
-      return { success: true, product: newProduct };
-    },
-    {
-      body: t.Object({
-        title: t.Object({ en: t.String(), zh: t.String(), th: t.Optional(t.String()) }),
-        sku: t.String(),
-        department: t.String(),
-        subCategory: t.Object({ en: t.String(), zh: t.String(), th: t.Optional(t.String()) }),
-        status: t.Union([t.Literal('enabled'), t.Literal('disabled')]),
-        publishAt: t.Optional(t.Union([t.String(), t.Null()])),
-        expireAt: t.Optional(t.Union([t.String(), t.Null()])),
-        imagePaths: t.Array(t.String()),
-        pdfPaths: t.Array(t.String()),
-        contentBlocks: t.Array(t.Any()),
-        technicalMatrix: t.Array(t.Any()),
-        brand: t.Optional(t.String())
-      })
-    }
-  )
-  // Protected Admin Endpoint: Update existing product listing
-  .put(
-    '/api/products/:id',
-    async ({ params: { id }, body, getAdminUser, set }) => {
-      const admin = await getAdminUser();
-      if (!admin) {
-        set.status = 401;
-        return { success: false, error: 'Unauthorized session' };
-      }
-
-      const products = await getProducts();
-      const idx = products.findIndex((p) => p.id === id);
-      if (idx === -1) {
-        set.status = 404;
-        return { success: false, error: 'Product not found' };
-      }
-
-      const updatedProduct: Product = {
-        ...products[idx],
-        ...body,
-        id // Keep original ID
-      };
-
-      products[idx] = updatedProduct;
-      await saveProducts(products);
-
-      return { success: true, product: updatedProduct };
-    },
-    {
-      body: t.Object({
-        title: t.Object({ en: t.String(), zh: t.String(), th: t.Optional(t.String()) }),
-        sku: t.String(),
-        department: t.String(),
-        subCategory: t.Object({ en: t.String(), zh: t.String(), th: t.Optional(t.String()) }),
-        status: t.Union([t.Literal('enabled'), t.Literal('disabled')]),
-        publishAt: t.Optional(t.Union([t.String(), t.Null()])),
-        expireAt: t.Optional(t.Union([t.String(), t.Null()])),
-        imagePaths: t.Array(t.String()),
-        pdfPaths: t.Array(t.String()),
-        contentBlocks: t.Array(t.Any()),
-        technicalMatrix: t.Array(t.Any()),
-        brand: t.Optional(t.String())
-      })
-    }
-  )
-  // Protected Admin Endpoint: Remove product listing from catalog
-  .delete('/api/products/:id', async ({ params: { id }, getAdminUser, set }) => {
-    const admin = await getAdminUser();
-    if (!admin) {
-      set.status = 401;
-      return { success: false, error: 'Unauthorized session' };
-    }
-
-    const products = await getProducts();
-    const filtered = products.filter((p) => p.id !== id);
-    if (filtered.length === products.length) {
-      set.status = 404;
-      return { success: false, error: 'Product not found' };
-    }
-
-    await saveProducts(filtered);
-    return { success: true, message: 'Product deleted' };
-  })
-  // Protected Admin Endpoint: Handle multiple file uploads
-  .post(
-    '/api/upload',
-    async ({ body, getAdminUser, set }) => {
-      const admin = await getAdminUser();
-      if (!admin) {
-        set.status = 401;
-        return { success: false, error: 'Unauthorized session' };
-      }
-
-      try {
-        const files = body && (body as any).files;
-        if (!files) {
-          set.status = 400;
-          return { success: false, error: 'No files provided for upload' };
-        }
-
-        const fileList = Array.isArray(files) ? files : [files];
-        const savedPaths: string[] = [];
-
-        for (const file of fileList) {
-          if (!file || !file.name) continue;
-          // Generate unique name and preserve safe characters
-          const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-          const uniqueName = `${Date.now()}-${cleanName}`;
-          const destPath = join(UPLOADS_DIR, uniqueName);
-
-          // Write file binary using Bun's native fast writer
-          await Bun.write(destPath, file);
-          savedPaths.push(`/uploads/${uniqueName}`);
-        }
-
-        return { success: true, paths: savedPaths };
-      } catch (e: any) {
-        set.status = 500;
-        return { success: false, error: e.message };
-      }
-    },
-    {
-      body: t.Object({
-        files: t.Any()
-      })
-    }
-  )
-  // Catch-All Route for Admin and Client SPAs (Fallback for browser navigation routing)
-  .get('/admin', adminHtmlBundle.default)
-  .get('/admin/*', adminHtmlBundle.default)
-  .get('/', htmlBundle.default)
-  .get('/*', htmlBundle.default)
-  .listen(PORT);
-
-console.log(`[FULLSTACK SERVER] Elysia runs on http://localhost:${PORT}`);
-export { app };
+if (import.meta.main) {
+  app.listen(port);
+  console.info(`Dou Yee API listening at http://localhost:${port}`);
+  console.info(`API docs: http://localhost:${port}/swagger`);
+}
+export type App = typeof app;

@@ -1,0 +1,36 @@
+import type { ProductInput } from './products';
+
+function invalid(field: string, message: string): never {
+  throw Object.assign(new Error(message), { status: 400, code: 'VALIDATION_ERROR', details: { field, message } });
+}
+
+export function parseProductInput(body: Record<string, unknown>): ProductInput {
+  for (const name of ['sku', 'product_name', 'series']) {
+    if (typeof body[name] !== 'string' || !String(body[name]).trim()) invalid(name, `${name} is required`);
+  }
+  const decode = (field: string, fallback: unknown) => {
+    const value = body[field];
+    if (value === undefined || value === null || value === '') return fallback;
+    if (typeof value !== 'string') return value;
+    try { return JSON.parse(value); } catch { invalid(field, `${field} must contain valid JSON`); }
+  };
+  const otherImage = decode('other_image', []);
+  const specification = decode('specification', {});
+  const sizeWeights = decode('size_weights', {});
+  const other = decode('other', {});
+  const certs = decode('certificate_codes', []);
+  if (!Array.isArray(otherImage)) invalid('other_image', 'other_image must be a JSON array');
+  if (!Array.isArray(certs) || certs.some((code) => typeof code !== 'string')) invalid('certificate_codes', 'certificate_codes must be a string array');
+  for (const [field, value] of Object.entries({ specification, size_weights: sizeWeights, other })) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) invalid(field, `${field} must be a JSON object`);
+  }
+  return {
+    sku: String(body.sku).trim(), product_name: String(body.product_name).trim(), series: String(body.series).trim(),
+    brand: typeof body.brand === 'string' ? body.brand : null, title: typeof body.title === 'string' ? body.title : null,
+    main_image: typeof body.main_image === 'string' ? body.main_image : null, other_image: otherImage as unknown[],
+    specification: specification as Record<string, unknown>, size_weights: sizeWeights as Record<string, unknown>,
+    datasheet_pdf: typeof body.datasheet_pdf === 'string' ? body.datasheet_pdf : null,
+    certificate_pdf: typeof body.certificate_pdf === 'string' ? body.certificate_pdf : null,
+    other: other as Record<string, unknown>, certificate_codes: certs as string[]
+  };
+}
