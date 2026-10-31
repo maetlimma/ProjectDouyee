@@ -5,12 +5,12 @@ import { parseProductInput } from './product-validation';
 
 export interface ProductInput {
   sku: string; product_name: string; series: string; brand?: string | null; title?: string | null;
-  main_image?: string | null; other_image?: unknown[]; specification?: Record<string, unknown>;
+  main_image?: string | null; other_image?: unknown[]; specification?: Record<string, unknown>; specification_en?: Record<string, unknown>;
   size_weights?: Record<string, unknown>; datasheet_pdf?: string | null; certificate_pdf?: string | null;
   other?: Record<string, unknown>; certificate_codes?: string[];
 }
 export { parseProductInput };
-const columns = 'product_id, sku, product_name, series, brand, title, main_image, other_image, specification, size_weights, datasheet_pdf, certificate_pdf, other, create_ts, update_ts, create_by, update_by';
+const columns = 'product_id, sku, product_name, series, brand, title, main_image, other_image, specification, specification_en, size_weights, datasheet_pdf, certificate_pdf, other, create_ts, update_ts, create_by, update_by';
 
 export async function listProductsGrouped() {
   const { rows } = await pool.query(`SELECT ${columns} FROM product ORDER BY series, product_name`);
@@ -37,10 +37,10 @@ export async function saveProduct(input: ProductInput, actor: string, id?: strin
   const productId = id ?? randomUUID();
   try {
     await client.query('BEGIN');
-    const values = [productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null, input.main_image ?? null, JSON.stringify(input.other_image ?? []), JSON.stringify(input.specification ?? {}), JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null, JSON.stringify(input.other ?? {}), actor];
+    const values = [productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null, input.main_image ?? null, JSON.stringify(input.other_image ?? []), JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}), JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null, JSON.stringify(input.other ?? {}), actor];
     const query = id
-      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7, other_image=$8::jsonb, specification=$9::jsonb, size_weights=$10::jsonb, datasheet_pdf=$11, certificate_pdf=$12, other=$13::jsonb, update_by=$14, update_ts=now() WHERE product_id=$1 RETURNING ${columns}`
-      : `INSERT INTO product (product_id,sku,product_name,series,brand,title,main_image,other_image,specification,size_weights,datasheet_pdf,certificate_pdf,other,create_by,update_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$14) RETURNING ${columns}`;
+      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7, other_image=$8::jsonb, specification=$9::jsonb, specification_en=$10::jsonb, size_weights=$11::jsonb, datasheet_pdf=$12, certificate_pdf=$13, other=$14::jsonb, update_by=$15, update_ts=now() WHERE product_id=$1 RETURNING ${columns}`
+      : `INSERT INTO product (product_id,sku,product_name,series,brand,title,main_image,other_image,specification,specification_en,size_weights,datasheet_pdf,certificate_pdf,other,create_by,update_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14::jsonb,$15,$15) RETURNING ${columns}`;
     const result = await client.query(query, values);
     if (!result.rows[0]) { await client.query('ROLLBACK'); return null; }
     const certificates = [...new Set(input.certificate_codes ?? [])];
@@ -59,6 +59,7 @@ export async function deleteProduct(id: string) {
 
 export async function prepareProductWrite(body: Record<string, unknown>, old?: Record<string, any>) {
   const input = parseProductInput(body);
+  if (body.specification_en === undefined && old?.specification_en) input.specification_en = old.specification_en;
   if (!(await pool.query('SELECT 1 FROM series_type WHERE series_code=$1', [input.series])).rowCount) {
     throw Object.assign(new Error(`Unknown series: ${input.series}`), { status: 400, code: 'VALIDATION_ERROR', details: { field: 'series', message: 'Series does not exist' } });
   }

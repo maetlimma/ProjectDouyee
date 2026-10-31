@@ -48,7 +48,7 @@ const productFields = {
   sku: t.String({ minLength: 1 }), product_name: t.String({ minLength: 1 }), series: t.String({ minLength: 1 }),
   brand: t.Optional(t.Union([t.String(), t.Null()])), title: t.Optional(t.Union([t.String(), t.Null()])),
   main_image: t.Optional(t.Union([t.String(), t.Null()])), other_image: t.Optional(jsonField),
-  specification: t.Optional(jsonField), size_weights: t.Optional(jsonField),
+  specification: t.Optional(jsonField), specification_en: t.Optional(jsonField), size_weights: t.Optional(jsonField),
   datasheet_pdf: t.Optional(t.Union([t.String(), t.Null()])), certificate_pdf: t.Optional(t.Union([t.String(), t.Null()])),
   other: t.Optional(jsonField), certificate_codes: t.Optional(t.Union([t.String(), t.Array(t.String())])),
   main_image_file: t.Optional(t.File()), other_image_files: t.Optional(t.Files()),

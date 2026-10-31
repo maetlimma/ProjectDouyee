@@ -49,9 +49,9 @@ Every endpoint under `/api/v1` requires the admin JWT. Product update uses `prod
 
 ### Product request
 
-Product bodies use the API design's snake_case fields: `sku`, `product_name`, `series`, `brand`, `title`, `main_image`, `other_image`, `specification`, `size_weights`, `datasheet_pdf`, `certificate_pdf`, and `other`. `certificate_codes` is accepted to maintain the `CertificateProduct` mapping when creating or updating a product.
+Product bodies use the API design's snake_case fields: `sku`, `product_name`, `series`, `brand`, `title`, `main_image`, `other_image`, `specification` (Thai), `specification_en` (English), `size_weights`, `datasheet_pdf`, `certificate_pdf`, and `other`. `certificate_codes` is accepted to maintain the `CertificateProduct` mapping when creating or updating a product.
 
-For file upload, use `multipart/form-data`. Send ordinary metadata as form fields, JSON values (`other_image`, `specification`, `size_weights`, `other`, `certificate_codes`) as JSON strings, and file fields named `main_image_file`, `other_image_files` (repeat for multiple images), `datasheet_pdf_file`, or `certificate_pdf_file`. Certificate type create/update accepts `image_file`. Images are limited to 12 MiB and PDF files to 30 MiB. Files receive generated names and are stored in separate `storage/images` and `storage/documents` folders. File links require a JWT when fetched.
+For file upload, use `multipart/form-data`. Send ordinary metadata as form fields, JSON values (`other_image`, `specification`, `specification_en`, `size_weights`, `other`, `certificate_codes`) as JSON strings, and file fields named `main_image_file`, `other_image_files` (repeat for multiple images), `datasheet_pdf_file`, or `certificate_pdf_file`. Certificate type create/update accepts `image_file`. Images are limited to 12 MiB and PDF files to 30 MiB. Files receive generated names and are stored in separate `storage/images` and `storage/documents` folders. File links require a JWT when fetched.
 
 ## Database and assumptions
 
@@ -59,6 +59,7 @@ For file upload, use `multipart/form-data`. Send ordinary metadata as form field
 - A product has one series; deleting a series referenced by products returns a conflict.
 - Deleting a certificate type referenced by a product returns a conflict. Removing a product also removes its certificate mapping rows.
 - `other`, `specification` and `size_weights` are JSONB objects; `other_image` is a JSONB array of stored file paths.
+- `specification` stores Thai values and `specification_en` stores English values under the same specification keys. Both are JSONB objects; file links and size weights are shared.
 - `certificate_codes` is the API input/output helper for the mapping table; it is not a column on `product`.
 
 Catalogue routes use `POST /api/v1/catalogue`, `PUT /api/v1/catalogue`, `GET /api/v1/catalogue?page=1&limit=20&sort=catalogue_name&order=asc&search=...`, and `DELETE /api/v1/catalogue`. Upload a PDF as `catalogue_pdf_file`; records return `catalogue_id`, `catalogue_name`, `catalogue_pdf`, `createTs`, `updateTs`, `createBy`, and `updateBy`. Catalogue PDFs are served through the authenticated `GET /api/v1/catalogue/:id/pdf` route.

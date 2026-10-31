@@ -9,7 +9,7 @@ import {
 type Product = {
   product_id: string; sku: string; product_name: string; series: string; brand: string | null;
   title: string | null; main_image: string | null; other_image: string[];
-  specification: Record<string, unknown>; size_weights: Record<string, unknown>;
+  specification: Record<string, unknown>; specification_en: Record<string, unknown>; size_weights: Record<string, unknown>;
   datasheet_pdf: string | null; certificate_pdf: string | null; other: Record<string, unknown>;
   certificate_codes: string[]; create_ts: string; update_ts: string; create_by: string; update_by: string;
 };
@@ -154,7 +154,7 @@ function ProductEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ sku: '', product_name: '', series: '', brand: '', title: '', specification: {} as Record<string, string>, size_weights: {} as Record<string, string>, certificate_codes: [] as string[] });
+  const [form, setForm] = useState({ sku: '', product_name: '', series: '', brand: '', title: '', specification: {} as Record<string, string>, specification_en: {} as Record<string, string>, size_weights: {} as Record<string, string>, certificate_codes: [] as string[] });
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [otherImagePaths, setOtherImagePaths] = useState<string[]>([]);
   const [otherImages, setOtherImages] = useState<File[]>([]);
@@ -167,7 +167,7 @@ function ProductEditor() {
       .then(([seriesData, certificateData, current]) => {
         if (!active) return;
         setSeriesList(seriesData); setCertificates(certificateData); setProduct(current);
-        if (current) setForm({ sku: current.sku, product_name: current.product_name, series: current.series, brand: current.brand ?? '', title: current.title ?? '', specification: Object.fromEntries(Object.entries(current.specification ?? {}).map(([key, value]) => [key, String(value ?? '')])), size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])), certificate_codes: current.certificate_codes ?? [] });
+        if (current) setForm({ sku: current.sku, product_name: current.product_name, series: current.series, brand: current.brand ?? '', title: current.title ?? '', specification: Object.fromEntries(Object.entries(current.specification ?? {}).map(([key, value]) => [key, String(value ?? '')])), specification_en: Object.fromEntries(Object.entries(current.specification_en ?? {}).map(([key, value]) => [key, String(value ?? '')])), size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])), certificate_codes: current.certificate_codes ?? [] });
         if (current) setOtherImagePaths(current.other_image ?? []);
         else if (seriesData.length) setForm((old) => ({ ...old, series: seriesData[0].series_code }));
       })
@@ -185,7 +185,7 @@ function ProductEditor() {
       const body = new FormData();
       body.append('sku', form.sku.trim()); body.append('product_name', form.product_name.trim()); body.append('series', form.series);
       body.append('brand', form.brand.trim()); body.append('title', form.title.trim());
-      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key }) => [key, form.specification[key] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify(product?.other ?? {}));
+      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key }) => [key, form.specification[key] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key }) => [key, form.specification_en[key] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify(product?.other ?? {}));
       body.append('certificate_codes', JSON.stringify(form.certificate_codes));
       body.append('other_image', JSON.stringify(otherImagePaths));
       if (product?.main_image) body.append('main_image', product.main_image);
@@ -228,8 +228,8 @@ function ProductEditor() {
           </div>
         </section>
 
-        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon purple"><FileText size={17} /></div><div><h2>Product Specifications / รายละเอียดสินค้า</h2><p>กรอกเฉพาะค่ารายละเอียดสินค้า · ชื่อหัวข้อกำหนดไว้ตามแบบฟอร์ม</p></div></div>
-          <div className="ac-spec-table">{specificationRows.map(({ key, label, placeholder }) => <div className="ac-spec-row" key={key}><div className="ac-spec-label">{label}</div><div className="ac-spec-value"><input className="ac-input" value={form.specification[key] ?? ''} onChange={(e) => update('specification', { ...form.specification, [key]: e.target.value })} placeholder={placeholder} />{key.startsWith('Footwear only Resistance') && <div className="ac-superscript-picker"><button type="button" className="ac-superscript-trigger" aria-label="แสดงเลขยกกำลัง" title="เลขยกกำลัง">xⁿ</button><div className="ac-superscript-tools" aria-label="เลือกเลขยกกำลัง">{superscriptDigits.map((digit, index) => <button key={digit} type="button" className="ac-superscript-button" title={`แทรกเลขยกกำลัง ${index}`} onClick={() => update('specification', { ...form.specification, [key]: `${form.specification[key] ?? ''}${digit}` })}>{digit}</button>)}</div></div>}</div></div>)}</div>
+        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon purple"><FileText size={17} /></div><div><h2>Product Specifications / รายละเอียดสินค้า</h2><p>กรอกข้อมูลทั้งภาษาไทย (TH) และภาษาอังกฤษ (EN)</p></div></div>
+          <div className="ac-spec-table">{specificationRows.map(({ key, label, placeholder }) => <div className="ac-spec-row" key={key}><div className="ac-spec-label">{label}</div><div className="ac-spec-value ac-spec-bilingual"><label className="ac-spec-language"><span>TH</span><input className="ac-input" value={form.specification[key] ?? ''} onChange={(e) => update('specification', { ...form.specification, [key]: e.target.value })} placeholder={placeholder} /></label><label className="ac-spec-language"><span>EN</span><input className="ac-input" value={form.specification_en[key] ?? ''} onChange={(e) => update('specification_en', { ...form.specification_en, [key]: e.target.value })} placeholder="Enter in English" />{key.startsWith('Footwear only Resistance') && <div className="ac-superscript-picker"><button type="button" className="ac-superscript-trigger" aria-label="Show superscript digits" title="Superscript digits">xⁿ</button><div className="ac-superscript-tools" aria-label="Choose superscript digit">{superscriptDigits.map((digit, index) => <button key={digit} type="button" className="ac-superscript-button" title={`Insert superscript ${index}`} onClick={() => update('specification_en', { ...form.specification_en, [key]: `${form.specification_en[key] ?? ''}${digit}` })}>{digit}</button>)}</div></div>}</label></div></div>)}</div>
           <section className="ac-size-section"><div className="ac-size-heading"><strong>ขนาด / น้ำหนักเฉลี่ยต่อคู่ (กรัม)</strong><span>กรอกน้ำหนักแยกตามไซซ์ · 36–47</span></div><div className="ac-size-table-wrap"><table className="ac-size-table"><tbody><tr><th>Size</th>{productSizes.map((size) => <th key={size}>{size}</th>)}</tr><tr><th>Weight</th>{productSizes.map((size) => <td key={size}><input aria-label={`Weight for size ${size}`} inputMode="decimal" value={form.size_weights[size] ?? ''} onChange={(e) => update('size_weights', { ...form.size_weights, [size]: e.target.value })} placeholder="—" /></td>)}</tr></tbody></table></div></section>
         </section>
 
