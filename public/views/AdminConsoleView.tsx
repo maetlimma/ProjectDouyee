@@ -19,11 +19,11 @@ type Catalogue = { catalogue_id: string; catalogue_name: string; catalogue_pdf: 
 type Group = { series: string; products: Product[] };
 
 const specificationRows = [
-  { key: 'Upper / ส่วนบน', label: 'Upper / ส่วนบน', placeholder: 'เช่น หนัง Split Barton สีดำ' },
-  { key: 'Toe cap / หัวรองเท้า', label: 'Toe cap / หัวรองเท้า', placeholder: 'เช่น เหล็ก' },
-  { key: 'Midplate / แผ่นกันทะลุ', label: 'Midplate / แผ่นกันทะลุ', placeholder: 'เช่น เหล็ก' },
-  { key: 'Footwear only Resistance / ความต้านทานไฟฟ้าสถิต', label: 'Footwear only Resistance / ความต้านทานไฟฟ้าสถิต', placeholder: 'เช่น <10×10³ โอห์ม' },
-  { key: 'Color / สี', label: 'Color / สี', placeholder: 'เช่น ส่วนบนสีดำ / พื้นสีดำ' },
+  { key_th: 'ส่วนบน', key_en: 'Upper', label: 'Upper / ส่วนบน', placeholder_th: 'กรอกเป็นภาษาไทย', placeholder_en: 'Enter in English' },
+  { key_th: 'หัวรองเท้า', key_en: 'Toe cap', label: 'Toe cap / หัวรองเท้า', placeholder_th: 'กรอกเป็นภาษาไทย', placeholder_en: 'Enter in English' },
+  { key_th: 'แผ่นกันทะลุ', key_en: 'Midplate', label: 'Midplate / แผ่นกันทะลุ', placeholder_th: 'กรอกเป็นภาษาไทย', placeholder_en: 'Enter in English' },
+  { key_th: 'ความต้านทานไฟฟ้าสถิต', key_en: 'Footwear only Resistance', label: 'Footwear only Resistance / ความต้านทานไฟฟ้าสถิต', placeholder_th: 'กรอกเป็นภาษาไทย', placeholder_en: 'Enter in English' },
+  { key_th: 'สี', key_en: 'Color', label: 'Color / สี', placeholder_th: 'กรอกเป็นภาษาไทย', placeholder_en: 'Enter in English' },
 ];
 const productSizes = Array.from({ length: 12 }, (_, index) => String(index + 36));
 const superscriptDigits = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
@@ -167,7 +167,31 @@ function ProductEditor() {
       .then(([seriesData, certificateData, current]) => {
         if (!active) return;
         setSeriesList(seriesData); setCertificates(certificateData); setProduct(current);
-        if (current) setForm({ sku: current.sku, product_name: current.product_name, series: current.series, brand: current.brand ?? '', title: current.title ?? '', specification: Object.fromEntries(Object.entries(current.specification ?? {}).map(([key, value]) => [key, String(value ?? '')])), specification_en: Object.fromEntries(Object.entries(current.specification_en ?? {}).map(([key, value]) => [key, String(value ?? '')])), size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])), certificate_codes: current.certificate_codes ?? [] });
+        if (current) {
+          const currentSpec = (current.specification ?? {}) as Record<string, unknown>;
+          const currentSpecEn = (current.specification_en ?? {}) as Record<string, unknown>;
+          setForm({
+            sku: current.sku,
+            product_name: current.product_name,
+            series: current.series,
+            brand: current.brand ?? '',
+            title: current.title ?? '',
+            specification: Object.fromEntries(
+              specificationRows.map((r) => [
+                r.key_th,
+                String(currentSpec[r.key_th] ?? currentSpec[r.label] ?? currentSpec[r.key_en] ?? '')
+              ])
+            ),
+            specification_en: Object.fromEntries(
+              specificationRows.map((r) => [
+                r.key_en,
+                String(currentSpecEn[r.key_en] ?? currentSpecEn[r.label] ?? currentSpecEn[r.key_th] ?? '')
+              ])
+            ),
+            size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])),
+            certificate_codes: current.certificate_codes ?? []
+          });
+        }
         if (current) setOtherImagePaths(current.other_image ?? []);
         else if (seriesData.length) setForm((old) => ({ ...old, series: seriesData[0].series_code }));
       })
@@ -185,7 +209,7 @@ function ProductEditor() {
       const body = new FormData();
       body.append('sku', form.sku.trim()); body.append('product_name', form.product_name.trim()); body.append('series', form.series);
       body.append('brand', form.brand.trim()); body.append('title', form.title.trim());
-      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key }) => [key, form.specification[key] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key }) => [key, form.specification_en[key] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify(product?.other ?? {}));
+      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_th }) => [key_th, form.specification[key_th] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_en }) => [key_en, form.specification_en[key_en] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify(product?.other ?? {}));
       body.append('certificate_codes', JSON.stringify(form.certificate_codes));
       body.append('other_image', JSON.stringify(otherImagePaths));
       if (product?.main_image) body.append('main_image', product.main_image);
@@ -229,7 +253,7 @@ function ProductEditor() {
         </section>
 
         <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon purple"><FileText size={17} /></div><div><h2>Product Specifications / รายละเอียดสินค้า</h2><p>กรอกข้อมูลทั้งภาษาไทย (TH) และภาษาอังกฤษ (EN)</p></div></div>
-          <div className="ac-spec-table">{specificationRows.map(({ key, label, placeholder }) => <div className="ac-spec-row" key={key}><div className="ac-spec-label">{label}</div><div className="ac-spec-value ac-spec-bilingual"><label className="ac-spec-language"><span>TH</span><input className="ac-input" value={form.specification[key] ?? ''} onChange={(e) => update('specification', { ...form.specification, [key]: e.target.value })} placeholder={placeholder} /></label><label className="ac-spec-language"><span>EN</span><input className="ac-input" value={form.specification_en[key] ?? ''} onChange={(e) => update('specification_en', { ...form.specification_en, [key]: e.target.value })} placeholder="Enter in English" />{key.startsWith('Footwear only Resistance') && <div className="ac-superscript-picker"><button type="button" className="ac-superscript-trigger" aria-label="Show superscript digits" title="Superscript digits">xⁿ</button><div className="ac-superscript-tools" aria-label="Choose superscript digit">{superscriptDigits.map((digit, index) => <button key={digit} type="button" className="ac-superscript-button" title={`Insert superscript ${index}`} onClick={() => update('specification_en', { ...form.specification_en, [key]: `${form.specification_en[key] ?? ''}${digit}` })}>{digit}</button>)}</div></div>}</label></div></div>)}</div>
+          <div className="ac-spec-table">{specificationRows.map(({ key_th, key_en, label, placeholder_th, placeholder_en }) => <div className="ac-spec-row" key={key_en}><div className="ac-spec-label">{label}</div><div className="ac-spec-value ac-spec-bilingual"><label className="ac-spec-language"><span>TH</span><input className="ac-input" value={form.specification[key_th] ?? ''} onChange={(e) => update('specification', { ...form.specification, [key_th]: e.target.value })} placeholder={placeholder_th} />{key_th === 'ความต้านทานไฟฟ้าสถิต' && <div className="ac-superscript-picker"><button type="button" className="ac-superscript-trigger" aria-label="Show superscript digits" title="Superscript digits">xⁿ</button><div className="ac-superscript-tools" aria-label="Choose superscript digit">{superscriptDigits.map((digit, index) => <button key={digit} type="button" className="ac-superscript-button" title={`Insert superscript ${index}`} onClick={() => update('specification', { ...form.specification, [key_th]: `${form.specification[key_th] ?? ''}${digit}` })}>{digit}</button>)}</div></div>}</label><label className="ac-spec-language"><span>EN</span><input className="ac-input" value={form.specification_en[key_en] ?? ''} onChange={(e) => update('specification_en', { ...form.specification_en, [key_en]: e.target.value })} placeholder={placeholder_en} />{key_en.startsWith('Footwear only Resistance') && <div className="ac-superscript-picker"><button type="button" className="ac-superscript-trigger" aria-label="Show superscript digits" title="Superscript digits">xⁿ</button><div className="ac-superscript-tools" aria-label="Choose superscript digit">{superscriptDigits.map((digit, index) => <button key={digit} type="button" className="ac-superscript-button" title={`Insert superscript ${index}`} onClick={() => update('specification_en', { ...form.specification_en, [key_en]: `${form.specification_en[key_en] ?? ''}${digit}` })}>{digit}</button>)}</div></div>}</label></div></div>)}</div>
           <section className="ac-size-section"><div className="ac-size-heading"><strong>ขนาด / น้ำหนักเฉลี่ยต่อคู่ (กรัม)</strong><span>กรอกน้ำหนักแยกตามไซซ์ · 36–47</span></div><div className="ac-size-table-wrap"><table className="ac-size-table"><tbody><tr><th>Size</th>{productSizes.map((size) => <th key={size}>{size}</th>)}</tr><tr><th>Weight</th>{productSizes.map((size) => <td key={size}><input aria-label={`Weight for size ${size}`} inputMode="decimal" value={form.size_weights[size] ?? ''} onChange={(e) => update('size_weights', { ...form.size_weights, [size]: e.target.value })} placeholder="—" /></td>)}</tr></tbody></table></div></section>
         </section>
 

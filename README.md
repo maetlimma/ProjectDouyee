@@ -59,7 +59,7 @@ For file upload, use `multipart/form-data`. Send ordinary metadata as form field
 - A product has one series; deleting a series referenced by products returns a conflict.
 - Deleting a certificate type referenced by a product returns a conflict. Removing a product also removes its certificate mapping rows.
 - `other`, `specification` and `size_weights` are JSONB objects; `other_image` is a JSONB array of stored file paths.
-- `specification` stores Thai values and `specification_en` stores English values under the same specification keys. Both are JSONB objects; file links and size weights are shared.
+- `specification` stores Thai values under Thai keys and `specification_en` stores English values under English keys. Both are JSONB objects; file links and size weights are shared.
 - `certificate_codes` is the API input/output helper for the mapping table; it is not a column on `product`.
 
 Catalogue routes use `POST /api/v1/catalogue`, `PUT /api/v1/catalogue`, `GET /api/v1/catalogue?page=1&limit=20&sort=catalogue_name&order=asc&search=...`, and `DELETE /api/v1/catalogue`. Upload a PDF as `catalogue_pdf_file`; records return `catalogue_id`, `catalogue_name`, `catalogue_pdf`, `createTs`, `updateTs`, `createBy`, and `updateBy`. Catalogue PDFs are served through the authenticated `GET /api/v1/catalogue/:id/pdf` route.
