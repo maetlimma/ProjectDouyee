@@ -1,0 +1,118 @@
+import { Elysia, t } from 'elysia';
+import { jwt } from '@elysiajs/jwt';
+import { randomUUID } from 'node:crypto';
+import { deleteCatalogue, getCatalogue, listCatalogues, saveCatalogue } from '../services/catalogues';
+import { fileResponse, readStoredFile, removeStoredFile, saveUpload } from '../services/files';
+import { actor, fileValue, secured, uuid } from '../middlewares/auth';
+import { fail, statusError } from '../middlewares/errors';
+import { jwtSecret } from '../config';
+
+export const catalogueRoutes = new Elysia({ prefix: '/catalogue' })
+  .use(jwt({ name: 'jwt', secret: jwtSecret, exp: '12h' }))
+  .post('/', async ({ body, request, jwt, set }) => {
+    try {
+      const user = await actor(request, jwt);
+      const b = body as any;
+      const name = String(b.catalogue_name ?? '').trim();
+      if (!name) fail(400, 'VALIDATION_ERROR', 'catalogue_name is required', { field: 'catalogue_name', message: 'Required' });
+      const pdf = await saveUpload(fileValue(b.catalogue_pdf_file), 'documents');
+      set.status = 201;
+      return await saveCatalogue({ catalogue_id: randomUUID(), catalogue_name: name, catalogue_pdf: pdf ?? b.catalogue_pdf ?? null }, user);
+    } catch (error) {
+      const err = statusError(error);
+      set.status = err.status;
+      return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
+    }
+  }, {
+    body: t.Object({
+      catalogue_name: t.String({ minLength: 1 }),
+      catalogue_pdf: t.Optional(t.Union([t.String(), t.Null()])),
+      catalogue_pdf_file: t.Optional(t.File())
+    }),
+    detail: { ...secured, tags: ['Catalogues'], summary: 'Create catalogue', description: 'Accepts JSON or multipart form data. Upload a PDF using catalogue_pdf_file.' }
+  })
+  .put('/', async ({ body, request, jwt, set }) => {
+    try {
+      const user = await actor(request, jwt);
+      const b = body as any;
+      const id = uuid(String(b.catalogue_id ?? ''), 'catalogue_id');
+      const old = await getCatalogue(id);
+      if (!old) fail(404, 'NOT_FOUND', 'Catalogue not found');
+      const name = String(b.catalogue_name ?? '').trim();
+      if (!name) fail(400, 'VALIDATION_ERROR', 'catalogue_name is required', { field: 'catalogue_name', message: 'Required' });
+      const pdf = await saveUpload(fileValue(b.catalogue_pdf_file), 'documents');
+      const updated = await saveCatalogue({ catalogue_id: id, catalogue_name: name, catalogue_pdf: pdf ?? b.catalogue_pdf ?? old.catalogue_pdf }, user, true);
+      if (pdf && old.catalogue_pdf && old.catalogue_pdf !== pdf) await removeStoredFile(old.catalogue_pdf);
+      return updated;
+    } catch (error) {
+      const err = statusError(error);
+      set.status = err.status;
+      return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
+    }
+  }, {
+    body: t.Object({
+      catalogue_id: t.String({ format: 'uuid' }),
+      catalogue_name: t.String({ minLength: 1 }),
+      catalogue_pdf: t.Optional(t.Union([t.String(), t.Null()])),
+      catalogue_pdf_file: t.Optional(t.File())
+    }),
+    detail: { ...secured, tags: ['Catalogues'], summary: 'Update catalogue' }
+  })
+  .get('/', async ({ request, jwt, query, set }) => {
+    try {
+      await actor(request, jwt);
+      const page = Math.max(1, Math.floor(Number(query.page) || 1));
+      const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || 20)));
+      const order = String(query.order ?? 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
+      return await listCatalogues({ page, limit, sort: String(query.sort ?? 'catalogue_name'), order, search: query.search ? String(query.search) : undefined });
+    } catch (error) {
+      const err = statusError(error);
+      set.status = err.status;
+      return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
+    }
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+      sort: t.Optional(t.String()),
+      order: t.Optional(t.String()),
+      search: t.Optional(t.String())
+    }),
+    detail: { ...secured, tags: ['Catalogues'], summary: 'List catalogues', description: 'Paginated, searchable and sorted catalogue list.' }
+  })
+  .delete('/', async ({ body, request, jwt, set }) => {
+    try {
+      await actor(request, jwt);
+      const id = uuid(String((body as any)?.catalogue_id ?? ''), 'catalogue_id');
+      const old = await getCatalogue(id);
+      if (!old) fail(404, 'NOT_FOUND', 'Catalogue not found');
+      await deleteCatalogue(id);
+      await removeStoredFile(old.catalogue_pdf);
+      set.status = 204;
+      return;
+    } catch (error) {
+      const err = statusError(error);
+      set.status = err.status;
+      return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
+    }
+  }, {
+    body: t.Object({ catalogue_id: t.String({ format: 'uuid' }) }),
+    detail: { ...secured, tags: ['Catalogues'], summary: 'Delete catalogue' }
+  })
+  .get('/:id/pdf', async ({ params, request, jwt, set }) => {
+    try {
+      await actor(request, jwt);
+      const catalogue = await getCatalogue(uuid(params.id, 'catalogue_id'));
+      if (!catalogue) fail(404, 'NOT_FOUND', 'Catalogue not found');
+      if (!catalogue.catalogue_pdf) fail(404, 'NOT_FOUND', 'Catalogue PDF is not available');
+      const file = await readStoredFile('documents', catalogue.catalogue_pdf.split('/').pop()!);
+      if (!file) fail(404, 'NOT_FOUND', 'Catalogue PDF file not found');
+      return fileResponse(file, true);
+    } catch (error) {
+      const err = statusError(error);
+      set.status = err.status;
+      return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
+    }
+  }, {
+    detail: { ...secured, tags: ['Catalogues'], summary: 'View catalogue PDF' }
+  });

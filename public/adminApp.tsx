@@ -3,7 +3,7 @@ import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation } fr
 import { Award, Box, LogOut, ShieldCheck, Layers3, BookOpen, PanelLeftClose, PanelLeft, Terminal } from 'lucide-react';
 import { I18nProvider } from './i18n';
 import LoginView from './views/LoginView';
-import { CataloguesManager, CertificatesManager, ProductEditor, ProductList, SeriesManager } from './views/AdminConsoleView';
+import { CataloguesManager, CertificatesManager, ProductEditor, ProductList, SeriesManager } from './views/admin';
 
 function AdminShell() {
   const location = useLocation();
