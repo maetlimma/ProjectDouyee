@@ -5,7 +5,7 @@ import { parseProductInput } from './product-validation';
 
 export interface ProductInput {
   sku: string; product_name: string; series: string; brand?: string | null; title?: string | null;
-  main_image?: string | null; other_image?: unknown[]; specification?: Record<string, unknown>; specification_en?: Record<string, unknown>;
+  main_image?: unknown[]; other_image?: unknown[]; specification?: Record<string, unknown>; specification_en?: Record<string, unknown>;
   size_weights?: Record<string, unknown>; datasheet_pdf?: string | null; certificate_pdf?: string | null;
   other?: Record<string, unknown>; certificate_codes?: string[];
 }
@@ -37,10 +37,10 @@ export async function saveProduct(input: ProductInput, actor: string, id?: strin
   const productId = id ?? randomUUID();
   try {
     await client.query('BEGIN');
-    const values = [productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null, input.main_image ?? null, JSON.stringify(input.other_image ?? []), JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}), JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null, JSON.stringify(input.other ?? {}), actor];
+    const values = [productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null, JSON.stringify(input.main_image ?? []), JSON.stringify(input.other_image ?? []), JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}), JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null, JSON.stringify(input.other ?? {}), actor];
     const query = id
-      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7, other_image=$8::jsonb, specification=$9::jsonb, specification_en=$10::jsonb, size_weights=$11::jsonb, datasheet_pdf=$12, certificate_pdf=$13, other=$14::jsonb, update_by=$15, update_ts=now() WHERE product_id=$1 RETURNING ${columns}`
-      : `INSERT INTO product (product_id,sku,product_name,series,brand,title,main_image,other_image,specification,specification_en,size_weights,datasheet_pdf,certificate_pdf,other,create_by,update_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14::jsonb,$15,$15) RETURNING ${columns}`;
+      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7::jsonb, other_image=$8::jsonb, specification=$9::jsonb, specification_en=$10::jsonb, size_weights=$11::jsonb, datasheet_pdf=$12, certificate_pdf=$13, other=$14::jsonb, update_by=$15, update_ts=now() WHERE product_id=$1 RETURNING ${columns}`
+      : `INSERT INTO product (product_id,sku,product_name,series,brand,title,main_image,other_image,specification,specification_en,size_weights,datasheet_pdf,certificate_pdf,other,create_by,update_by) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14::jsonb,$15,$15) RETURNING ${columns}`;
     const result = await client.query(query, values);
     if (!result.rows[0]) { await client.query('ROLLBACK'); return null; }
     const certificates = [...new Set(input.certificate_codes ?? [])];
@@ -64,16 +64,26 @@ export async function prepareProductWrite(body: Record<string, unknown>, old?: R
     throw Object.assign(new Error(`Unknown series: ${input.series}`), { status: 400, code: 'VALIDATION_ERROR', details: { field: 'series', message: 'Series does not exist' } });
   }
   const asFile = (value: unknown): File | undefined => value instanceof File ? value : undefined;
-  const main = asFile(body.main_image_file);
+  const mainFiles = body.main_image_files
+    ? (Array.isArray(body.main_image_files) ? body.main_image_files : [body.main_image_files])
+    : body.main_image_file ? [body.main_image_file] : [];
   const dataSheet = asFile(body.datasheet_pdf_file);
   const certPdf = asFile(body.certificate_pdf_file);
   const extras = body.other_image_files ? (Array.isArray(body.other_image_files) ? body.other_image_files : [body.other_image_files]) : [];
-  if (main) input.main_image = (await saveUpload(main, 'images')) ?? input.main_image ?? old?.main_image;
-  else input.main_image ||= old?.main_image ?? null;
+  if (mainFiles.length) {
+    const savedMain = (await Promise.all(mainFiles.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean);
+    input.main_image = [...(input.main_image ?? []), ...savedMain];
+  } else if (body.main_image === undefined && old?.main_image) {
+    input.main_image = Array.isArray(old.main_image) ? old.main_image : [old.main_image];
+  }
   if (dataSheet) input.datasheet_pdf = (await saveUpload(dataSheet, 'documents')) ?? input.datasheet_pdf ?? old?.datasheet_pdf;
   else input.datasheet_pdf ||= old?.datasheet_pdf ?? null;
   if (certPdf) input.certificate_pdf = (await saveUpload(certPdf, 'documents')) ?? input.certificate_pdf ?? old?.certificate_pdf;
   else input.certificate_pdf ||= old?.certificate_pdf ?? null;
-  if (extras.length) input.other_image = [...(input.other_image ?? []), ...(await Promise.all(extras.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean)];
+  if (extras.length) {
+    input.other_image = [...(input.other_image ?? []), ...(await Promise.all(extras.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean)];
+  } else if (body.other_image === undefined && old?.other_image) {
+    input.other_image = Array.isArray(old.other_image) ? old.other_image : [old.other_image];
+  }
   return input;
 }

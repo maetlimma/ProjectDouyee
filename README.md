@@ -51,14 +51,14 @@ Every endpoint under `/api/v1` requires the admin JWT. Product update uses `prod
 
 Product bodies use the API design's snake_case fields: `sku`, `product_name`, `series`, `brand`, `title`, `main_image`, `other_image`, `specification` (Thai), `specification_en` (English), `size_weights`, `datasheet_pdf`, `certificate_pdf`, and `other`. `certificate_codes` is accepted to maintain the `CertificateProduct` mapping when creating or updating a product.
 
-For file upload, use `multipart/form-data`. Send ordinary metadata as form fields, JSON values (`other_image`, `specification`, `specification_en`, `size_weights`, `other`, `certificate_codes`) as JSON strings, and file fields named `main_image_file`, `other_image_files` (repeat for multiple images), `datasheet_pdf_file`, or `certificate_pdf_file`. Certificate type create/update accepts `image_file`. Images are limited to 12 MiB and PDF files to 30 MiB. Files receive generated names and are stored in separate `storage/images` and `storage/documents` folders. File links require a JWT when fetched.
+For file upload, use `multipart/form-data`. Send ordinary metadata as form fields, JSON values (`main_image`, `other_image`, `specification`, `specification_en`, `size_weights`, `other`, `certificate_codes`) as JSON strings, and file fields named `main_image_files` (or `main_image_file`), `other_image_files` (repeat for multiple images), `datasheet_pdf_file`, or `certificate_pdf_file`. Certificate type create/update accepts `image_file`. Images are limited to 12 MiB and PDF files to 30 MiB. Files receive generated names and are stored in separate `storage/images` and `storage/documents` folders. File links require a JWT when fetched.
 
 ## Database and assumptions
 
 - The initial migration creates `product`, `series_type`, `certificate_type`, and `certificate_product`, with foreign keys and audit fields. It seeds the three series and two certificate codes listed in the design brief.
 - A product has one series; deleting a series referenced by products returns a conflict.
 - Deleting a certificate type referenced by a product returns a conflict. Removing a product also removes its certificate mapping rows.
-- `other`, `specification` and `size_weights` are JSONB objects; `other_image` is a JSONB array of stored file paths.
+- `main_image` and `other_image` are JSONB arrays of stored file paths; `other`, `specification` and `size_weights` are JSONB objects.
 - `specification` stores Thai values under Thai keys and `specification_en` stores English values under English keys. Both are JSONB objects; file links and size weights are shared.
 - `certificate_codes` is the API input/output helper for the mapping table; it is not a column on `product`.
 

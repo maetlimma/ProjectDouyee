@@ -55,7 +55,7 @@ describe('API integration', () => {
 
   it('creates, groups, reads, updates, and deletes a product through HTTP handlers', async () => {
     const sku = `TEST-${crypto.randomUUID()}`;
-    const data = { sku, product_name: 'Integration test item', series: 'e9 Series', specification: { voltage: '24V' }, size_weights: {}, other: {}, certificate_codes: ['CE'] };
+    const data = { sku, product_name: 'Integration test item', series: 'e9 Series', main_image: ['/files/images/test.png'], specification: { voltage: '24V' }, size_weights: {}, other: {}, certificate_codes: ['CE'] };
     let response = await api(`${prefix}/product`, 'POST', data);
     expect(response.status).toBe(201);
     const created = await response.json();

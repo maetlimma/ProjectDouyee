@@ -17,4 +17,4 @@ export async function saveCertificate(data: { certificate_code: string; image?: 
     : 'INSERT INTO certificate_type (certificate_code,image,create_by,update_by) VALUES ($1,$2,$3,$3) RETURNING *';
   return (await pool.query(sql, [data.certificate_code, data.image ?? null, actor])).rows[0] ?? null;
 }
-export async function deleteCertificate(code: string) { return Boolean((await pool.query('DELETE FROM certificate_type WHERE certificate_code=$1 RETURNING certificate_code')).rows.length); }
+export async function deleteCertificate(code: string) { return Boolean((await pool.query('DELETE FROM certificate_type WHERE certificate_code=$1 RETURNING certificate_code', [code])).rows.length); }
