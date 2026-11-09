@@ -33,6 +33,12 @@ beforeAll(async () => {
 afterAll(async () => { await pool.end(); });
 
 describe('API integration', () => {
+  it('serves generated brochure pages through the public assets route', async () => {
+    const response = await app.handle(new Request('http://localhost/assets/brochure-001.jpg'));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('image/jpeg');
+  });
+
   it('creates, lists, updates, and deletes a series through HTTP handlers', async () => {
     const code = `TEST-${crypto.randomUUID()}`;
     let response = await api(`${prefix}/series`, 'POST', { series_code: code, series_name: 'Test series' });

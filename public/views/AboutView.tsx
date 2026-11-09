@@ -1,5 +1,6 @@
 import React from 'react';
 import { useI18n } from '../i18n';
+import BrochureViewer from '../components/BrochureViewer';
 
 type Block =
   | { kind: 'p'; text: string; lead?: string }
@@ -105,7 +106,7 @@ const AboutView: React.FC = () => {
             );
           })}
         </div>
-        <img className="site-about-poster" src="/assets/about-poster.jpg" alt="Eurostat safety footwear" />
+        <BrochureViewer />
       </div>
       <img className="site-cert-icons" src="/assets/cert-icons.png" alt="Safety footwear classes SB, S1, S1P, S2, S3 with CE and SNI marks" />
     </div>
