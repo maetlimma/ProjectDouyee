@@ -56,3 +56,35 @@ Deployment is described in `render.yaml` (free Docker web service plus free Post
 ## Project rules
 - No emojis in code comments.
 - Keep code comments short, clean and professional.
+
+## Dev skill config
+
+### Verification
+- Launch: `bun run dev` from the repo root (needs the Docker PostgreSQL from `bun run setup`). Port 3000.
+- Readiness: `GET http://localhost:3000/` returns 200.
+- App URL: http://localhost:3000 (public site), http://localhost:3000/admin (admin portal).
+- Login: public pages need none. Admin uses email + password then an OTP printed to the server console; ask the user to sign in, never type credentials.
+- UI change paths: `public/**` (except `public/assets/**` alone).
+- Stop: kill the PID of the `bun` process started for the run; never kill every bun process.
+- Data: local Docker PostgreSQL, shared with integration tests. No emails are sent.
+
+## Known Pitfalls
+
+### page-flip cannot be destroyed cleanly
+
+**Symptom**: Every reopen of the brochure modal adds another animation loop, and a destroyed book keeps redrawing.
+
+**Cause**: `PageFlip.destroy()` calls `block.remove()` on the root element passed to the constructor, which removes a React-owned node if one was passed. Its `Render.start()` `requestAnimationFrame` loop (`node_modules/page-flip/src/Render/Render.ts`, around line 137) is never cancelled, and `destroy()` does not stop it.
+
+**Fix**: Create the root `div` imperatively inside the effect and append it to a React-owned host. Create the book once and keep it mounted, hiding it with CSS, instead of recreating it per open. On cleanup, call `destroy()` and replace the render method with a no-op.
+
+```ts
+const block = document.createElement('div');
+hostRef.current.appendChild(block);
+const book = new PageFlip(block, options);
+// cleanup:
+book.destroy();
+(book as unknown as { render?: { render: () => void } }).render!.render = () => {};
+```
+
+**Affected file(s)**: `public/components/BrochureViewer.tsx` (lines 24-59), `public/page-flip.d.ts`
