@@ -31,7 +31,7 @@ Route order in `src/index.ts` matters: the file routes are registered before the
 - localStorage keys: `douyee_admin_token` holds the JWT and `douyee_lang` holds the UI language.
 
 ### Data layer
-Products, series, certificate types and catalogues are stored in PostgreSQL. Admin accounts are the exception: `src/legacy-auth-store.ts` reads them from `database/users.json`, which is gitignored and created with `scripts/create-admin.ts`. Never commit that file or a default password.
+Everything is stored in PostgreSQL: products, series, certificate types, catalogues, admin accounts (`admin_user`, see `src/services/admins.ts`) and uploaded file bytes (`stored_file`). The app must not write to local disk, because the Render free tier has no persistent disk. Never commit a default password.
 
 The concepts below describe the older public-site product model that `ProductDetailView.tsx` still expects. Its `/api/products` endpoints no longer exist on this branch.
 
@@ -45,7 +45,9 @@ Key model concepts:
 ### Auth
 `POST /api/auth/login` checks the password with `Bun.password.verify`. On success it creates a 6-digit OTP with `crypto.randomInt`, keeps it in an in-memory `Map` for 5 minutes and prints it to the server console. `POST /api/auth/verify-otp` then issues a JWT signed with `jwtSecret` from `src/config.ts`. That secret is `JWT_SECRET`, which production requires to be at least 32 characters. Otherwise it is a random value per process. Never add a hardcoded fallback secret. In `src/routes/v1.ts`, every handler calls `actor()` to check the token by hand, so new admin routes must do the same. When `NODE_ENV === 'test'`, the login response also includes `testOtp`.
 
-Uploads are validated by MIME type and size in `src/services/files.ts`, stored under `FILE_STORAGE_DIR` (default `storage/`, gitignored) with UUID names, and served only to authenticated requests through `/files/:folder/:filename`.
+Uploads are validated by MIME type and size in `src/services/files.ts`, stored in the `stored_file` table with UUID names, and served only to authenticated requests through `/files/:folder/:filename` and the v1 PDF routes, using `fileResponse()`.
+
+Deployment is described in `render.yaml` (free Docker web service plus free Postgres). The container start command runs migrations before the server.
 
 ## Testing notes
 - Tests import `app` from `src/index.ts` and call `app.handle(new Request(...))`.

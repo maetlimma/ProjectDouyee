@@ -6,9 +6,9 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { jwtSecret } from './config';
 import { basename, join } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
-import { getUsers } from './legacy-auth-store';
 import { apiV1 } from './routes/v1';
-import { resolveStoredFile } from './services/files';
+import { bootstrapAdminFromEnv, findAdminByEmail } from './services/admins';
+import { fileResponse, readStoredFile } from './services/files';
 
 const port = Number(process.env.PORT ?? 3000);
 const challenges = new Map<string, { email: string; code: string; expiresAt: number }>();
@@ -50,8 +50,7 @@ export const app = new Elysia()
   .get('/health', () => ({ status: 'ok' }))
   // Kept for the existing admin login UI: OTP is logged to the server console in local development.
   .post('/api/auth/login', async ({ body, set }) => {
-    const users = await getUsers();
-    const user = users.find((entry) => entry.email.toLowerCase() === body.email.toLowerCase());
+    const user = await findAdminByEmail(body.email);
     if (!user || !(await Bun.password.verify(body.password, user.passwordHash))) {
       set.status = 401;
       return { success: false, error: 'Invalid email or password' };
@@ -90,11 +89,9 @@ export const app = new Elysia()
   .get('/files/:folder/:filename', async ({ params, request, jwt, set }) => {
     const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     if (!token || !(await jwt.verify(token))) { set.status = 401; return { error: { code: 'UNAUTHORIZED', message: 'A valid admin bearer token is required' } }; }
-    const path = resolveStoredFile(params.folder, params.filename);
-    if (!path || !(await Bun.file(path).exists())) { set.status = 404; return { error: { code: 'NOT_FOUND', message: 'File not found' } }; }
-    const ext = params.filename.split('.').pop()?.toLowerCase();
-    set.headers['content-type'] = ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-    return Bun.file(path);
+    const file = await readStoredFile(params.folder, params.filename);
+    if (!file) { set.status = 404; return { error: { code: 'NOT_FOUND', message: 'File not found' } }; }
+    return fileResponse(file);
   })
   // Serve artwork directly from disk; the static SPA fallback must not turn asset requests into HTML.
   .get('/assets/:filename', ({ params, set }) => serveAsset(params.filename, set))
@@ -105,6 +102,7 @@ export const app = new Elysia()
   .get('/*', await import(join(import.meta.dir, '../public/index.html')).then((module) => module.default));
 
 if (import.meta.main) {
+  await bootstrapAdminFromEnv();
   app.listen(port);
   console.info(`Dou Yee API listening at http://localhost:${port}`);
   console.info(`API docs: http://localhost:${port}/swagger`);

@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { deleteProduct, getProduct, listProductsGrouped, prepareProductWrite, saveProduct } from '../services/products';
 import { deleteCertificate, deleteSeries, getCertificate, listCertificates, listSeries, saveCertificate, saveSeries } from '../services/lookups';
-import { removeStoredFile, resolveStoredFile, saveUpload } from '../services/files';
+import { fileResponse, readStoredFile, removeStoredFile, saveUpload } from '../services/files';
 import { deleteCatalogue, getCatalogue, listCatalogues, saveCatalogue } from '../services/catalogues';
 import { randomUUID } from 'node:crypto';
 import { jwtSecret } from '../config';
@@ -98,11 +98,11 @@ export const apiV1 = new Elysia({ prefix: '/api/v1' })
     catch (error) { const err = statusError(error); set.status = err.status; return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } }; }
   }, { body: t.Object({ product_id: t.String({ format: 'uuid' }) }), detail: { ...secured, tags: ['Products'], summary: 'Delete product' } })
   .get('/product/:id/datasheet', async ({ params, request, jwt, set }) => {
-    try { await actor(request, jwt); const p: any = await getProduct(uuid(params.id)); if (!p) fail(404, 'NOT_FOUND', 'Product not found'); if (!p.datasheet_pdf) fail(404, 'NOT_FOUND', 'Datasheet is not available'); const filename = p.datasheet_pdf.split('/').pop()!; const path = resolveStoredFile('documents', filename); if (!path || !(await Bun.file(path).exists())) fail(404, 'NOT_FOUND', 'Datasheet file not found'); set.headers['content-type'] = 'application/pdf'; set.headers['content-disposition'] = `inline; filename="${filename}"`; return Bun.file(path); }
+    try { await actor(request, jwt); const p: any = await getProduct(uuid(params.id)); if (!p) fail(404, 'NOT_FOUND', 'Product not found'); if (!p.datasheet_pdf) fail(404, 'NOT_FOUND', 'Datasheet is not available'); const file = await readStoredFile('documents', p.datasheet_pdf.split('/').pop()!); if (!file) fail(404, 'NOT_FOUND', 'Datasheet file not found'); return fileResponse(file, true); }
     catch (error) { const err = statusError(error); set.status = err.status; return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } }; }
   }, { detail: { ...secured, tags: ['Products'], summary: 'Download product datasheet PDF' } })
   .get('/product/:id/certificate', async ({ params, request, jwt, set }) => {
-    try { await actor(request, jwt); const p: any = await getProduct(uuid(params.id)); if (!p) fail(404, 'NOT_FOUND', 'Product not found'); if (!p.certificate_pdf) fail(404, 'NOT_FOUND', 'Certificate PDF is not available'); const filename = p.certificate_pdf.split('/').pop()!; const path = resolveStoredFile('documents', filename); if (!path || !(await Bun.file(path).exists())) fail(404, 'NOT_FOUND', 'Certificate file not found'); set.headers['content-type'] = 'application/pdf'; set.headers['content-disposition'] = `inline; filename="${filename}"`; return Bun.file(path); }
+    try { await actor(request, jwt); const p: any = await getProduct(uuid(params.id)); if (!p) fail(404, 'NOT_FOUND', 'Product not found'); if (!p.certificate_pdf) fail(404, 'NOT_FOUND', 'Certificate PDF is not available'); const file = await readStoredFile('documents', p.certificate_pdf.split('/').pop()!); if (!file) fail(404, 'NOT_FOUND', 'Certificate file not found'); return fileResponse(file, true); }
     catch (error) { const err = statusError(error); set.status = err.status; return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } }; }
   }, { detail: { ...secured, tags: ['Products'], summary: 'Download product certificate PDF' } })
   .post('/series', async ({ body, request, jwt, set }) => {
@@ -132,7 +132,7 @@ export const apiV1 = new Elysia({ prefix: '/api/v1' })
     catch (error) { const err = statusError(error); set.status = err.status; return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } }; }
   }, { body: t.Object({ catalogue_id: t.String({ format: 'uuid' }) }), detail: { ...secured, tags: ['Catalogues'], summary: 'Delete catalogue' } })
   .get('/catalogue/:id/pdf', async ({ params, request, jwt, set }) => {
-    try { await actor(request, jwt); const catalogue = await getCatalogue(uuid(params.id, 'catalogue_id')); if (!catalogue) fail(404, 'NOT_FOUND', 'Catalogue not found'); if (!catalogue.catalogue_pdf) fail(404, 'NOT_FOUND', 'Catalogue PDF is not available'); const filename = catalogue.catalogue_pdf.split('/').pop()!; const path = resolveStoredFile('documents', filename); if (!path || !(await Bun.file(path).exists())) fail(404, 'NOT_FOUND', 'Catalogue PDF file not found'); set.headers['content-type'] = 'application/pdf'; set.headers['content-disposition'] = `inline; filename="${filename}"`; return Bun.file(path); }
+    try { await actor(request, jwt); const catalogue = await getCatalogue(uuid(params.id, 'catalogue_id')); if (!catalogue) fail(404, 'NOT_FOUND', 'Catalogue not found'); if (!catalogue.catalogue_pdf) fail(404, 'NOT_FOUND', 'Catalogue PDF is not available'); const file = await readStoredFile('documents', catalogue.catalogue_pdf.split('/').pop()!); if (!file) fail(404, 'NOT_FOUND', 'Catalogue PDF file not found'); return fileResponse(file, true); }
     catch (error) { const err = statusError(error); set.status = err.status; return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } }; }
   }, { detail: { ...secured, tags: ['Catalogues'], summary: 'View catalogue PDF' } })
   .post('/certificate', async ({ body, request, jwt, set }) => {
