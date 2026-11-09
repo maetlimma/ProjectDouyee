@@ -1,6 +1,8 @@
 node_modules
-storage
 .git
 .env
-.env.example
-tests
+.env.*
+!.env.example
+storage
+database
+*.log

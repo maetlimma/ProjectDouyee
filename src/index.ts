@@ -2,18 +2,15 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { jwt } from '@elysiajs/jwt';
 import { swagger } from '@elysiajs/swagger';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
+import { jwtSecret } from './config';
 import { basename, join } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
-import { getUsers } from './legacy-auth-store';
 import { apiV1 } from './routes/v1';
-import { resolveStoredFile } from './services/files';
+import { bootstrapAdminFromEnv, findAdminByEmail } from './services/admins';
+import { fileResponse, readStoredFile } from './services/files';
 
 const port = Number(process.env.PORT ?? 3000);
-const jwtSecret = process.env.JWT_SECRET ?? 'local-development-secret-change-me';
-if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
-  throw new Error('Set JWT_SECRET to a random value of at least 32 characters in production.');
-}
 const challenges = new Map<string, { email: string; code: string; expiresAt: number }>();
 const assetsDir = join(import.meta.dir, '../public/assets');
 
@@ -53,13 +50,12 @@ export const app = new Elysia()
   .get('/health', () => ({ status: 'ok' }))
   // Kept for the existing admin login UI: OTP is logged to the server console in local development.
   .post('/api/auth/login', async ({ body, set }) => {
-    const users = await getUsers();
-    const user = users.find((entry) => entry.email.toLowerCase() === body.email.toLowerCase());
+    const user = await findAdminByEmail(body.email);
     if (!user || !(await Bun.password.verify(body.password, user.passwordHash))) {
       set.status = 401;
       return { success: false, error: 'Invalid email or password' };
     }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const challengeToken = randomUUID();
     challenges.set(challengeToken, { email: user.email, code, expiresAt: Date.now() + 5 * 60_000 });
     console.info(`[ADMIN AUTH] OTP for ${user.email}: ${code}`);
@@ -93,11 +89,9 @@ export const app = new Elysia()
   .get('/files/:folder/:filename', async ({ params, request, jwt, set }) => {
     const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     if (!token || !(await jwt.verify(token))) { set.status = 401; return { error: { code: 'UNAUTHORIZED', message: 'A valid admin bearer token is required' } }; }
-    const path = resolveStoredFile(params.folder, params.filename);
-    if (!path || !(await Bun.file(path).exists())) { set.status = 404; return { error: { code: 'NOT_FOUND', message: 'File not found' } }; }
-    const ext = params.filename.split('.').pop()?.toLowerCase();
-    set.headers['content-type'] = ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-    return Bun.file(path);
+    const file = await readStoredFile(params.folder, params.filename);
+    if (!file) { set.status = 404; return { error: { code: 'NOT_FOUND', message: 'File not found' } }; }
+    return fileResponse(file);
   })
   // Serve artwork directly from disk; the static SPA fallback must not turn asset requests into HTML.
   .get('/assets/:filename', ({ params, set }) => serveAsset(params.filename, set))
@@ -108,6 +102,7 @@ export const app = new Elysia()
   .get('/*', await import(join(import.meta.dir, '../public/index.html')).then((module) => module.default));
 
 if (import.meta.main) {
+  await bootstrapAdminFromEnv();
   app.listen(port);
   console.info(`Dou Yee API listening at http://localhost:${port}`);
   console.info(`API docs: http://localhost:${port}/swagger`);

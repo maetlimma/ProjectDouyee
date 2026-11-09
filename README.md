@@ -8,7 +8,9 @@ Requirements: Bun and Docker Compose.
 
 ```powershell
 bun install
-bun run setup && bun run dev
+bun run setup
+bun run admin:create admin@douyee.com "<a password of 12+ characters>"
+bun run dev
 ```
 
 Local setup uses the same default PostgreSQL credentials as Docker Compose, so `.env` is optional. Copy `.env.example` to `.env` only when you want to override those defaults.
@@ -19,7 +21,7 @@ Local setup uses the same default PostgreSQL credentials as Docker Compose, so `
 - Admin login UI: `http://localhost:3000/admin/login`
 - Admin console: `http://localhost:3000/admin/dashboard` (Products, Series, Certificates, Catalogues)
 
-Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Development defaults are only for local use.
+Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Outside production, a missing secret is replaced with a random one for each run, so admin sessions end when the server restarts.
 
 ## Authentication
 
@@ -28,7 +30,7 @@ Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.
 3. `POST /api/auth/verify-otp` with the `challengeToken` and `otpCode` from those steps.
 4. Send `Authorization: Bearer <token>` to API endpoints.
 
-The existing administrator account remains in `database/users.json`; login continues to verify its existing password hash. No admin user management endpoint is added.
+Administrator accounts are stored in the PostgreSQL `admin_user` table. Create one, or reset its password, with `bun run admin:create <email> <password>`. On a host without a shell, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` instead: the server creates that admin on startup if no admin exists yet. There is no admin user management endpoint.
 
 The admin console uses the v1 API: products are grouped by series, product forms edit the Product fields and certificate links, Series manages `SeriesType`, Certificates manages `CertificateType`, and Catalogues manages uploaded PDF records with search, pagination and sorting. Product and catalogue file uploads use the API's multipart fields; audit history is shown from the API response.
 
@@ -65,7 +67,17 @@ For file upload, use `multipart/form-data`. Send ordinary metadata as form field
 Catalogue routes use `POST /api/v1/catalogue`, `PUT /api/v1/catalogue`, `GET /api/v1/catalogue?page=1&limit=20&sort=catalogue_name&order=asc&search=...`, and `DELETE /api/v1/catalogue`. Upload a PDF as `catalogue_pdf_file`; records return `catalogue_id`, `catalogue_name`, `catalogue_pdf`, `createTs`, `updateTs`, `createBy`, and `updateBy`. Catalogue PDFs are served through the authenticated `GET /api/v1/catalogue/:id/pdf` route.
 - The design did not specify product request serialization or delete payloads. This implementation accepts JSON or multipart form data for file-bearing writes and uses key fields in delete request bodies as shown above.
 - Audit fields use the authenticated admin email. PostgreSQL records creation and update timestamps in UTC.
-- Uploaded files are stored on the application host; use a persistent mounted volume for `FILE_STORAGE_DIR` in deployment.
+- Uploaded files are stored in PostgreSQL, not on the application host, so the server needs no persistent disk. They count toward the database's storage.
+
+## Deploy to Render (free tier)
+
+`render.yaml` defines a free Docker web service and a free PostgreSQL database in the Singapore region.
+
+1. In the Render dashboard, choose **New > Blueprint** and select this repository.
+2. When prompted, enter `ADMIN_EMAIL` and `ADMIN_PASSWORD` (12+ characters). `JWT_SECRET` is generated for you.
+3. Deploy. The container runs migrations, creates the first admin, and starts the server. Each push to the deploy branch redeploys.
+
+Free-tier limits: the service sleeps after 15 minutes without traffic and takes about a minute to wake. A sleep also cancels any login part-way through its OTP step. Free Render PostgreSQL expires 30 days after creation and is deleted 14 days later unless upgraded, with 1 GB of storage and no backups. Upgrade the database or move the data before it expires. The login OTP is printed to the service's logs in the Render dashboard.
 
 ## Tests
 
@@ -75,7 +87,7 @@ The test suite includes product validation unit tests and three API integration 
 bun test
 ```
 
-Integration tests use the existing `admin@douyee.com` account and its default development password unless `TEST_ADMIN_PASSWORD` is set.
+Integration tests log in with `TEST_ADMIN_EMAIL` (default `admin@douyee.com`) and `TEST_ADMIN_PASSWORD`, which is required. Create that account with `bun run admin:create` first.
 
 ## Project structure
 
@@ -84,8 +96,9 @@ src/
   db/pool.ts                 PostgreSQL connection pool
   migrations/                node-pg-migrate schema
   routes/v1.ts               Versioned REST controllers
-  services/                  Product, lookup, and file business logic
+  services/                  Product, lookup, admin, and file business logic
   index.ts                   Elysia app, auth, Swagger and login UI routes
 tests/                       Product validation and API integration tests
-storage/                     Generated host-side upload storage (gitignored)
+scripts/                     Setup, migrations, and admin creation
+Dockerfile, render.yaml      Render deployment
 ```
