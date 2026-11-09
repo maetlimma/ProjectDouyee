@@ -59,7 +59,13 @@ export const app = new Elysia()
     const challengeToken = randomUUID();
     challenges.set(challengeToken, { email: user.email, code, expiresAt: Date.now() + 5 * 60_000 });
     console.info(`[ADMIN AUTH] OTP for ${user.email}: ${code}`);
-    return { success: true, challengeToken, message: 'OTP code generated. Check server console.', ...(process.env.NODE_ENV === 'test' ? { testOtp: code } : {}) };
+    return {
+      success: true,
+      challengeToken,
+      message: 'OTP code generated. Check server console.',
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: code } : {}),
+      ...(process.env.NODE_ENV === 'test' ? { testOtp: code } : {})
+    };
   }, { body: t.Object({ email: t.String({ format: 'email' }), password: t.String({ minLength: 1 }) }), detail: { tags: ['Auth'] } })
   .post('/api/auth/verify-otp', async ({ body, jwt, set }) => {
     const challenge = challenges.get(body.challengeToken);

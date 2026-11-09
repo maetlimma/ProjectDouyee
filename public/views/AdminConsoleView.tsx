@@ -849,7 +849,9 @@ function ProductList() {
                                     />
                                     <span>
                                       <strong>{product.product_name}</strong>
-                                      <small>{product.title || product.series}</small>
+                                      {product.title && product.title !== product.series ? (
+                                        <small>{product.title}</small>
+                                      ) : null}
                                     </span>
                                   </div>
                                 </td>
@@ -980,7 +982,9 @@ function ProductList() {
                             />
                             <div className="ac-card-cockpit-info">
                               <strong title={product.product_name}>{product.product_name}</strong>
-                              <small title={product.title || product.series}>{product.title || product.series}</small>
+                              {product.title && product.title !== product.series ? (
+                                <small title={product.title}>{product.title}</small>
+                              ) : null}
                             </div>
                           </div>
 
@@ -2006,6 +2010,10 @@ function SeriesManager() {
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
 
+  const [deletingSeries, setDeletingSeries] = useState<Series | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -2083,15 +2091,22 @@ function SeriesManager() {
     }
   }
 
-  async function remove(item: Series) {
-    if (!window.confirm(`Delete series “${item.series_name}”? Series used by products cannot be deleted.`)) return;
-    setError('');
+  async function handleConfirmDelete() {
+    if (!deletingSeries) return;
+    setDeleteLoading(true);
+    setDeleteError('');
     try {
-      await request('/api/v1/series', { method: 'DELETE', body: JSON.stringify({ series_code: item.series_code }) });
+      await request('/api/v1/series', {
+        method: 'DELETE',
+        body: JSON.stringify({ series_code: deletingSeries.series_code })
+      });
       setSuccess('Series deleted.');
+      setDeletingSeries(null);
       await load();
     } catch (e) {
-      setError((e as Error).message);
+      setDeleteError((e as Error).message);
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -2155,11 +2170,11 @@ function SeriesManager() {
                         </div>
                       </td>
                       <td><code>{item.series_code}</code></td>
-                      <td><span className="ac-date">{dateLabel(item.update_ts)}</span><small className="ac-audit">by {item.update_by}</small></td>
+                      <td><span className="ac-date">{dateLabel(item.update_ts)}</span><small className="ac-audit">{item.update_by}</small></td>
                       <td>
                         <div className="ac-row-actions">
                           <button className="ac-icon-button" title="Edit series" onClick={() => startEdit(item)}><Pencil size={15} /></button>
-                          <button className="ac-icon-button danger" title="Delete series" onClick={() => void remove(item)}><Trash2 size={15} /></button>
+                          <button className="ac-icon-button danger" title="Delete series" onClick={() => { setDeletingSeries(item); setDeleteError(''); }}><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>
@@ -2214,6 +2229,17 @@ function SeriesManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        open={Boolean(deletingSeries)}
+        title="Delete series"
+        itemName={deletingSeries ? `${deletingSeries.series_name} (${deletingSeries.series_code})` : ''}
+        description="Are you sure you want to delete this series? Series used by products cannot be deleted."
+        loading={deleteLoading}
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        onClose={() => { if (!deleteLoading) setDeletingSeries(null); }}
+      />
     </div>
   );
 }
@@ -2238,6 +2264,10 @@ function CertificatesManager() {
   const [editImage, setEditImage] = useState<File | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const [deletingCert, setDeletingCert] = useState<Certificate | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [previewModal, setPreviewModal] = useState<{ path?: string; file?: File; title: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -2327,15 +2357,22 @@ function CertificatesManager() {
     }
   }
 
-  async function remove(item: Certificate) {
-    if (!window.confirm(`Delete certificate type “${item.certificate_code}”? Linked products must be unassigned first.`)) return;
-    setError('');
+  async function handleConfirmDelete() {
+    if (!deletingCert) return;
+    setDeleteLoading(true);
+    setDeleteError('');
     try {
-      await request('/api/v1/certificate', { method: 'DELETE', body: JSON.stringify({ certificate_code: item.certificate_code }) });
+      await request('/api/v1/certificate', {
+        method: 'DELETE',
+        body: JSON.stringify({ certificate_code: deletingCert.certificate_code })
+      });
       setSuccess('Certificate type deleted.');
+      setDeletingCert(null);
       await load();
     } catch (e) {
-      setError((e as Error).message);
+      setDeleteError((e as Error).message);
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -2407,7 +2444,7 @@ function CertificatesManager() {
                     <small>Updated {dateLabel(item.update_ts)} · {item.update_by}</small>
                     <div className="ac-row-actions">
                       <button className="ac-icon-button" title="Edit certificate" onClick={() => startEdit(item)}><Pencil size={15} /></button>
-                      <button className="ac-icon-button danger" title="Delete certificate" onClick={() => void remove(item)}><Trash2 size={15} /></button>
+                      <button className="ac-icon-button danger" title="Delete certificate" onClick={() => { setDeletingCert(item); setDeleteError(''); }}><Trash2 size={15} /></button>
                     </div>
                   </div>
                 </article>
@@ -2560,6 +2597,17 @@ function CertificatesManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        open={Boolean(deletingCert)}
+        title="Delete certificate type"
+        itemName={deletingCert?.certificate_code || ''}
+        description="Are you sure you want to delete this certificate type? Linked products must be unassigned first."
+        loading={deleteLoading}
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        onClose={() => { if (!deleteLoading) setDeletingCert(null); }}
+      />
     </div>
   );
 }
@@ -2592,6 +2640,10 @@ function CataloguesManager() {
   const [editPdf, setEditPdf] = useState<File | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const [deletingCatalogue, setDeletingCatalogue] = useState<Catalogue | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2684,16 +2736,24 @@ function CataloguesManager() {
     }
   }
 
-  async function remove(item: Catalogue) {
-    if (!window.confirm(`Delete catalogue “${item.catalogue_name}”?`)) return;
-    setError('');
+  async function handleConfirmDelete() {
+    if (!deletingCatalogue) return;
+    setDeleteLoading(true);
+    setDeleteError('');
     try {
-      await request('/api/v1/catalogue', { method: 'DELETE', body: JSON.stringify({ catalogue_id: item.catalogue_id }) });
+      await request('/api/v1/catalogue', {
+        method: 'DELETE',
+        body: JSON.stringify({ catalogue_id: deletingCatalogue.catalogue_id })
+      });
       setSuccess('Catalogue deleted.');
-      if (items.length === 1 && page > 1) setPage(page - 1);
+      const isLastOnPage = items.length === 1 && page > 1;
+      setDeletingCatalogue(null);
+      if (isLastOnPage) setPage(page - 1);
       else await load();
     } catch (e) {
-      setError((e as Error).message);
+      setDeleteError((e as Error).message);
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -2807,12 +2867,12 @@ function CataloguesManager() {
                             <span className="ac-muted">No PDF</span>
                           )}
                         </td>
-                        <td><span className="ac-date">{dateLabel(item.updateTs)}</span><small className="ac-audit">by {item.updateBy}</small></td>
+                        <td><span className="ac-date">{dateLabel(item.updateTs)}</span><small className="ac-audit">{item.updateBy}</small></td>
                         <td>{item.createBy}</td>
                         <td>
                           <div className="ac-row-actions">
                             <button className="ac-icon-button" title="Edit catalogue" onClick={() => startEdit(item)}><Pencil size={15} /></button>
-                            <button className="ac-icon-button danger" title="Delete catalogue" onClick={() => void remove(item)}><Trash2 size={15} /></button>
+                            <button className="ac-icon-button danger" title="Delete catalogue" onClick={() => { setDeletingCatalogue(item); setDeleteError(''); }}><Trash2 size={15} /></button>
                           </div>
                         </td>
                       </tr>
@@ -2896,6 +2956,17 @@ function CataloguesManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        open={Boolean(deletingCatalogue)}
+        title="Delete catalogue"
+        itemName={deletingCatalogue?.catalogue_name || ''}
+        description="Are you sure you want to delete this catalogue? This action cannot be undone."
+        loading={deleteLoading}
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        onClose={() => { if (!deleteLoading) setDeletingCatalogue(null); }}
+      />
     </div>
   );
 }

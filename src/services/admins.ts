@@ -11,7 +11,7 @@ export async function findAdminByEmail(email: string): Promise<AdminUser | null>
 }
 
 export async function upsertAdmin(email: string, password: string) {
-  if (password.length < 12) throw new Error('Admin password must be at least 12 characters.');
+  if (password.length < 8) throw new Error('Admin password must be at least 8 characters.');
   const passwordHash = await Bun.password.hash(password);
   const { rows } = await pool.query<{ created: boolean }>(
     `INSERT INTO admin_user (admin_id, email, password_hash) VALUES ($1, $2, $3)

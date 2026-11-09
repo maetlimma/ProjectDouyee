@@ -29,6 +29,9 @@ const LoginView: React.FC = () => {
         throw new Error(data.error || 'Authentication failed');
       }
       setChallengeToken(data.challengeToken);
+      if (data.devOtp || data.testOtp) {
+        setOtpCode(data.devOtp || data.testOtp);
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -82,7 +85,7 @@ const LoginView: React.FC = () => {
           ) : (
             <form className="ac-login-form" onSubmit={handleOtpSubmit}>
               <label className="ac-login-field"><span>6-digit one-time code</span><div className="ac-otp-input"><Sparkles size={16} /><input type="text" inputMode="numeric" autoComplete="one-time-code" required maxLength={6} pattern="[0-9]{6}" placeholder="000000" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} /></div></label>
-              <div className="ac-login-tip"><ShieldCheck size={15} /><span>For local development, find the one-time code in the backend server console.</span></div>
+              <div className="ac-login-tip"><ShieldCheck size={15} /><span>{otpCode ? 'Development mode: OTP code has been auto-filled.' : 'For local development, find the one-time code in the backend server console.'}</span></div>
               <button type="submit" className="ac-button ac-button-primary ac-login-submit" disabled={loading}>{loading ? <LoaderCircle size={15} className="ac-spin" /> : <Check size={15} />}{loading ? 'Verifying…' : 'Verify and open workspace'}</button>
               <button type="button" className="ac-login-back" onClick={() => { setChallengeToken(null); setOtpCode(''); setError(null); }}>← Back to credentials</button>
             </form>
