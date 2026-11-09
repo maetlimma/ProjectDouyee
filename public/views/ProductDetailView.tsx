@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { FileText, Layers } from 'lucide-react';
 import Breadcrumbs from '../Breadcrumbs';
+import { sanitizeHtml } from '../sanitizeHtml';
 
 interface MultilingualText {
   en: string;
@@ -302,7 +303,7 @@ const ProductDetailView: React.FC = () => {
                       <div 
                         key={idx} 
                         className="rich-paragraph-block"
-                        dangerouslySetInnerHTML={{ __html: block.content[lang] || block.content.en }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(block.content[lang] || block.content.en) }}
                       />
                     );
                   } else if (block.type === 'bulletList' && block.items) {

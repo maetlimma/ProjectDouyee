@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { app } from '../src/index';
 import { pool } from '../src/db/pool';
 
-const email = 'admin@douyee.com';
+const email = process.env.TEST_ADMIN_EMAIL ?? 'admin@douyee.com';
+const password = process.env.TEST_ADMIN_PASSWORD;
+if (!password) throw new Error('Set TEST_ADMIN_PASSWORD (and optionally TEST_ADMIN_EMAIL) to an admin created with scripts/create-admin.ts.');
 let token = '';
 const prefix = `/api/v1`;
 
@@ -18,7 +20,7 @@ beforeAll(async () => {
   await pool.query('SELECT 1');
   const login = await app.handle(new Request('http://localhost/api/auth/login', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password: process.env.TEST_ADMIN_PASSWORD ?? 'password123' })
+    body: JSON.stringify({ email, password })
   }));
   const challenge = await login.json();
   const verification = await app.handle(new Request('http://localhost/api/auth/verify-otp', {

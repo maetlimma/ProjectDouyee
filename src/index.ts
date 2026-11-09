@@ -2,7 +2,8 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { jwt } from '@elysiajs/jwt';
 import { swagger } from '@elysiajs/swagger';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
+import { jwtSecret } from './config';
 import { basename, join } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
 import { getUsers } from './legacy-auth-store';
@@ -10,10 +11,6 @@ import { apiV1 } from './routes/v1';
 import { resolveStoredFile } from './services/files';
 
 const port = Number(process.env.PORT ?? 3000);
-const jwtSecret = process.env.JWT_SECRET ?? 'local-development-secret-change-me';
-if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
-  throw new Error('Set JWT_SECRET to a random value of at least 32 characters in production.');
-}
 const challenges = new Map<string, { email: string; code: string; expiresAt: number }>();
 const assetsDir = join(import.meta.dir, '../public/assets');
 
@@ -59,7 +56,7 @@ export const app = new Elysia()
       set.status = 401;
       return { success: false, error: 'Invalid email or password' };
     }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const challengeToken = randomUUID();
     challenges.set(challengeToken, { email: user.email, code, expiresAt: Date.now() + 5 * 60_000 });
     console.info(`[ADMIN AUTH] OTP for ${user.email}: ${code}`);

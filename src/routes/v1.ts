@@ -5,6 +5,7 @@ import { deleteCertificate, deleteSeries, getCertificate, listCertificates, list
 import { removeStoredFile, resolveStoredFile, saveUpload } from '../services/files';
 import { deleteCatalogue, getCatalogue, listCatalogues, saveCatalogue } from '../services/catalogues';
 import { randomUUID } from 'node:crypto';
+import { jwtSecret } from '../config';
 
 function fail(status: number, code: string, message: string, details?: unknown): never {
   throw Object.assign(new Error(message), { status, code, details });
@@ -59,7 +60,7 @@ const productUpdateBody = t.Object({ ...productFields, product_id: t.String({ fo
 const secured = { security: [{ BearerAuth: [] }] };
 
 export const apiV1 = new Elysia({ prefix: '/api/v1' })
-  .use(jwt({ name: 'jwt', secret: process.env.JWT_SECRET ?? 'local-development-secret-change-me', exp: '12h' }))
+  .use(jwt({ name: 'jwt', secret: jwtSecret, exp: '12h' }))
   .onError(({ error, set }) => {
     const result = statusError(error);
     set.status = result.status;

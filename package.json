@@ -8,6 +8,7 @@
     "setup": "bun scripts/setup.ts",
     "db:migrate": "bun scripts/migrate.ts up",
     "db:rollback": "bun scripts/migrate.ts down",
+    "admin:create": "bun scripts/create-admin.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

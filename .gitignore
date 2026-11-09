@@ -9,3 +9,5 @@ storage/
 .bun-install/
 .DS_Store
 Thumbs.db
+database/
+public/uploads/

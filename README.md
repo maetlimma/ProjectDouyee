@@ -8,7 +8,9 @@ Requirements: Bun and Docker Compose.
 
 ```powershell
 bun install
-bun run setup && bun run dev
+bun run setup
+bun run admin:create admin@douyee.com "<a password of 12+ characters>"
+bun run dev
 ```
 
 Local setup uses the same default PostgreSQL credentials as Docker Compose, so `.env` is optional. Copy `.env.example` to `.env` only when you want to override those defaults.
@@ -19,7 +21,7 @@ Local setup uses the same default PostgreSQL credentials as Docker Compose, so `
 - Admin login UI: `http://localhost:3000/admin/login`
 - Admin console: `http://localhost:3000/admin/dashboard` (Products, Series, Certificates, Catalogues)
 
-Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Development defaults are only for local use.
+Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.env` before deploying the service. Production startup rejects a missing or short JWT secret. Outside production, a missing secret is replaced with a random one for each run, so admin sessions end when the server restarts.
 
 ## Authentication
 
@@ -28,7 +30,7 @@ Set a strong `JWT_SECRET` (at least 32 characters) and `POSTGRES_PASSWORD` in `.
 3. `POST /api/auth/verify-otp` with the `challengeToken` and `otpCode` from those steps.
 4. Send `Authorization: Bearer <token>` to API endpoints.
 
-The existing administrator account remains in `database/users.json`; login continues to verify its existing password hash. No admin user management endpoint is added.
+Administrator accounts are stored in `database/users.json`, which is gitignored and never committed. Create or reset one with `bun run admin:create <email> <password>`. There is no admin user management endpoint.
 
 The admin console uses the v1 API: products are grouped by series, product forms edit the Product fields and certificate links, Series manages `SeriesType`, Certificates manages `CertificateType`, and Catalogues manages uploaded PDF records with search, pagination and sorting. Product and catalogue file uploads use the API's multipart fields; audit history is shown from the API response.
 
@@ -75,7 +77,7 @@ The test suite includes product validation unit tests and three API integration 
 bun test
 ```
 
-Integration tests use the existing `admin@douyee.com` account and its default development password unless `TEST_ADMIN_PASSWORD` is set.
+Integration tests log in with `TEST_ADMIN_EMAIL` (default `admin@douyee.com`) and `TEST_ADMIN_PASSWORD`, which is required. Create that account with `bun run admin:create` first.
 
 ## Project structure
 
