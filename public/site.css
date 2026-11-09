@@ -1076,6 +1076,19 @@
     padding: 0;
   }
 
+  .site-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .site-footer-logo {
+    margin-left: 0;
+  }
+
+  .site-footer-map {
+    margin-left: 0;
+  }
+
   .site-series-head {
     margin-left: -0.6rem;
   }
@@ -1153,5 +1166,58 @@
 
   .site-footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .site-footer-grid > .site-footer-empty {
+    display: none;
+  }
+}
+
+/* Footer on phones: readable text, clear section breaks, full-width map */
+@media (max-width: 640px) {
+  .site-footer {
+    padding-top: 2rem;
+  }
+
+  .site-footer-logo {
+    width: 110px;
+    margin-bottom: 1rem;
+  }
+
+  .site-footer-grid {
+    gap: 0;
+  }
+
+  .site-footer-grid > div {
+    padding: 1rem 0;
+    border-top: 1px solid rgba(30, 41, 59, 0.12);
+  }
+
+  .site-footer h4 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .site-footer p,
+  .site-footer li,
+  .site-footer a {
+    font-size: 0.8rem;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+
+  .site-footer li + li {
+    margin-top: 0.2rem;
+  }
+
+  .site-footer-map {
+    height: 200px;
+  }
+
+  .site-copyright {
+    font-size: 0.7rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(30, 41, 59, 0.12);
   }
 }

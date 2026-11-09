@@ -221,7 +221,8 @@ const AppFooter: React.FC = () => {
             src={`https://maps.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&t=k&z=15&output=embed`}
           />
         </div>
-        <div>
+        {/* Kept in the desktop grid when empty so the columns stay in place; hidden when stacked */}
+        <div className={sectors.length === 0 ? 'site-footer-empty' : undefined}>
           <h4>Products</h4>
           <ul>
             {sectors.map((s) => (
