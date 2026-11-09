@@ -429,11 +429,20 @@
 }
 
 /* About us */
+/* The cover sets the row height; longer text scrolls inside its column */
 .site-about {
   display: grid;
-  grid-template-columns: 1fr 290px;
-  gap: 2.5rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.site-about-text {
+  contain: size;
+  overflow-y: auto;
+  padding-right: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: #1aa3c9 transparent;
 }
 
 .site-about-text p,
@@ -1054,6 +1063,12 @@
 
   .site-about {
     grid-template-columns: 1fr;
+  }
+
+  .site-about-text {
+    contain: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .site-footer-grid {
