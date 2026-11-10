@@ -1,13 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { randomUUID } from 'node:crypto';
-import { deleteCatalogue, getCatalogue, listCatalogues, saveCatalogue } from '../services/catalogues';
+import { catalogueCover, coverResponse, deleteCatalogue, forgetCover, getCatalogue, listCatalogues, saveCatalogue } from '../services/catalogues';
 import { fileResponse, readStoredFile, removeStoredFile, saveUpload } from '../services/files';
 import { actor, fileValue, secured, uuid } from '../middlewares/auth';
 import { fail, statusError } from '../middlewares/errors';
 import { jwtSecret } from '../config';
-
-const coverCache = new Map<string, Buffer>();
 
 export const catalogueRoutes = new Elysia({ prefix: '/catalogue' })
   .use(jwt({ name: 'jwt', secret: jwtSecret, exp: '12h' }))
@@ -44,7 +42,7 @@ export const catalogueRoutes = new Elysia({ prefix: '/catalogue' })
       if (!name) fail(400, 'VALIDATION_ERROR', 'catalogue_name is required', { field: 'catalogue_name', message: 'Required' });
       const pdf = await saveUpload(fileValue(b.catalogue_pdf_file), 'documents');
       const updated = await saveCatalogue({ catalogue_id: id, catalogue_name: name, catalogue_pdf: pdf ?? b.catalogue_pdf ?? old.catalogue_pdf }, user, true);
-      if (old.catalogue_pdf) coverCache.delete(old.catalogue_pdf.split('/').pop()!);
+      forgetCover(old.catalogue_pdf);
       if (pdf && old.catalogue_pdf && old.catalogue_pdf !== pdf) await removeStoredFile(old.catalogue_pdf);
       return updated;
     } catch (error) {
@@ -89,7 +87,7 @@ export const catalogueRoutes = new Elysia({ prefix: '/catalogue' })
       const old = await getCatalogue(id);
       if (!old) fail(404, 'NOT_FOUND', 'Catalogue not found');
       await deleteCatalogue(id);
-      if (old.catalogue_pdf) coverCache.delete(old.catalogue_pdf.split('/').pop()!);
+      forgetCover(old.catalogue_pdf);
       await removeStoredFile(old.catalogue_pdf);
       set.status = 204;
       return;
@@ -133,39 +131,9 @@ export const catalogueRoutes = new Elysia({ prefix: '/catalogue' })
       if (!catalogue) fail(404, 'NOT_FOUND', 'Catalogue not found');
       if (!catalogue.catalogue_pdf) fail(404, 'NOT_FOUND', 'Catalogue PDF is not available');
 
-      const filename = catalogue.catalogue_pdf.split('/').pop()!;
-      const cached = coverCache.get(filename);
-      if (cached) {
-        return new Response(new Uint8Array(cached), {
-          headers: {
-            'Content-Type': 'image/jpeg',
-            'Cache-Control': 'public, max-age=86400',
-            'Content-Length': String(cached.length)
-          }
-        });
-      }
-
-      const file = await readStoredFile('documents', filename);
-      if (!file) fail(404, 'NOT_FOUND', 'Catalogue PDF file not found');
-
-      const mupdf = await import('mupdf');
-      const buf = new mupdf.Buffer(file.data);
-      const doc = mupdf.Document.openDocument(buf, 'application/pdf');
-      const page = doc.loadPage(0);
-      const [, y0, , y1] = page.getBounds();
-      const targetHeight = 800;
-      const scale = targetHeight / Math.max(1, y1 - y0);
-      const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB, false, true);
-      const jpeg = Buffer.from(pixmap.asJPEG(85));
-      coverCache.set(filename, jpeg);
-
-      return new Response(new Uint8Array(jpeg), {
-        headers: {
-          'Content-Type': 'image/jpeg',
-          'Cache-Control': 'public, max-age=86400',
-          'Content-Length': String(jpeg.length)
-        }
-      });
+      const jpeg = await catalogueCover(catalogue.catalogue_pdf);
+      if (!jpeg) fail(404, 'NOT_FOUND', 'Catalogue PDF file not found');
+      return coverResponse(jpeg!);
     } catch (error) {
       const err = statusError(error);
       set.status = err.status;

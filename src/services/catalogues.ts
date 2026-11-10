@@ -1,4 +1,48 @@
 import { pool } from '../db/pool';
+import { readStoredFile } from './files';
+
+// Rendered first-page covers, keyed by stored PDF filename
+const coverCache = new Map<string, Buffer>();
+
+export const forgetCover = (pdfPath: string | null | undefined) => {
+  if (pdfPath) coverCache.delete(pdfPath.split('/').pop()!);
+};
+
+// JPEG of the PDF's first page, 800px tall; null when the file is missing
+export async function catalogueCover(pdfPath: string) {
+  const filename = pdfPath.split('/').pop()!;
+  const cached = coverCache.get(filename);
+  if (cached) return cached;
+  const file = await readStoredFile('documents', filename);
+  if (!file) return null;
+  const mupdf = await import('mupdf');
+  const doc = mupdf.Document.openDocument(new mupdf.Buffer(file.data), 'application/pdf');
+  const page = doc.loadPage(0);
+  const [, y0, , y1] = page.getBounds();
+  const scale = 800 / Math.max(1, y1 - y0);
+  const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB, false, true);
+  const jpeg = Buffer.from(pixmap.asJPEG(85));
+  coverCache.set(filename, jpeg);
+  return jpeg;
+}
+
+export const coverResponse = (jpeg: Buffer) =>
+  new Response(new Uint8Array(jpeg), {
+    headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400', 'Content-Length': String(jpeg.length) }
+  });
+
+// Catalogues with a PDF, newest first, for the public site
+export async function listPublicCatalogues() {
+  const { rows } = await pool.query(
+    `SELECT catalogue_id, catalogue_name FROM catalogue WHERE catalogue_pdf IS NOT NULL ORDER BY create_ts DESC, catalogue_name`
+  );
+  return rows.map((row) => ({
+    id: row.catalogue_id as string,
+    name: row.catalogue_name as string,
+    cover: `/api/catalogues/${row.catalogue_id}/cover`,
+    pdf: `/api/catalogues/${row.catalogue_id}/pdf`
+  }));
+}
 
 const columns = `catalogue_id, catalogue_name, catalogue_pdf,
   create_ts AS "createTs", update_ts AS "updateTs", create_by AS "createBy", update_by AS "updateBy"`;

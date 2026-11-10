@@ -45,7 +45,7 @@ export async function saveUpload(file: File | undefined, folder: Folder) {
   if (!allowed[folder].has(file.type)) {
     throw Object.assign(new Error(`Unsupported ${folder} file type`), { status: 400, code: 'VALIDATION_ERROR' });
   }
-  const limit = folder === 'images' ? 12 * 1024 * 1024 : 30 * 1024 * 1024;
+  const limit = folder === 'images' ? 12 * 1024 * 1024 : 60 * 1024 * 1024;
   if (file.size > limit) {
     throw Object.assign(new Error(`${folder} file is too large`), { status: 400, code: 'VALIDATION_ERROR' });
   }
