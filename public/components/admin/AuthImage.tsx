@@ -17,7 +17,7 @@ export function AuthImage({
     let objectUrl = '';
     let active = true;
     if (!path) { setSrc(''); return; }
-    if (!path.startsWith('/files/')) { setSrc(path); return; }
+    if (!path.startsWith('/files/') && !path.startsWith('/api/')) { setSrc(path); return; }
     fetch(path, { headers: { Authorization: `Bearer ${token()}` } })
       .then((response) => response.ok ? response.blob() : Promise.reject())
       .then((blob) => {

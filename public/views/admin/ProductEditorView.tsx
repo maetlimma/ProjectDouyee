@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowDownToLine, ArrowLeft, Award, Box, Check, ExternalLink, Eye, FileText, Image as ImageIcon,
+  ArrowDownToLine, ArrowLeft, Award, Box, Check, CircleAlert, ExternalLink, Eye, FileText, Image as ImageIcon,
   LoaderCircle, Plus, ShieldCheck, UploadCloud, X
 } from 'lucide-react';
 import { Certificate, Product, Series } from './types';
@@ -11,6 +11,33 @@ import { Notice } from '../../components/admin/Notice';
 import { Field } from '../../components/admin/Field';
 import { FileField } from '../../components/admin/FileField';
 import { AuthImage } from '../../components/admin/AuthImage';
+import { DocPreviewModal } from '../../components/admin/DocPreviewModal';
+
+function FileImageThumb({ file, alt }: { file: File; alt: string }) {
+  const [url, setUrl] = useState<string>('');
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+  if (!url) return null;
+  return <img src={url} alt={alt} />;
+}
+
+function PreviewModalImg({ file, path, title }: { file?: File; path?: string; title: string }) {
+  const [url, setUrl] = useState<string>('');
+  useEffect(() => {
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  if (file) {
+    return url ? <img src={url} alt={title} className="ac-image-preview-modal-img" /> : null;
+  }
+  return <AuthImage path={path} alt={title} className="ac-image-preview-modal-img" />;
+}
 
 export function ProductEditor() {
   const { id } = useParams();
@@ -22,13 +49,21 @@ export function ProductEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [conflictData, setConflictData] = useState<{
+    expected_version?: number;
+    current_version?: number;
+    updated_by?: string;
+    updated_at?: string;
+  } | null>(null);
   const [form, setForm] = useState({ sku: '', product_name: '', series: '', brand: '', title: '', specification: {} as Record<string, string>, specification_en: {} as Record<string, string>, size_weights: {} as Record<string, string>, certificate_codes: [] as string[] });
   const [mainImagePaths, setMainImagePaths] = useState<string[]>([]);
   const [mainImages, setMainImages] = useState<File[]>([]);
   const [otherImagePaths, setOtherImagePaths] = useState<string[]>([]);
   const [otherImages, setOtherImages] = useState<File[]>([]);
   const [datasheet, setDatasheet] = useState<File | null>(null);
+  const [datasheetPath, setDatasheetPath] = useState<string | null>(null);
   const [certificatePdf, setCertificatePdf] = useState<File | null>(null);
+  const [certificatePdfPath, setCertificatePdfPath] = useState<string | null>(null);
   const resistanceInputRef = useRef<HTMLInputElement>(null);
   const pendingCursorRef = useRef<number | null>(null);
   const resistanceHistoryRef = useRef<Array<{ value: string; cursor: number }>>([]);
@@ -159,55 +194,89 @@ export function ProductEditor() {
     }
   };
 
+  const applyProductData = (current: Product) => {
+    setProduct(current);
+    const currentSpec = (current.specification ?? {}) as Record<string, unknown>;
+    const currentSpecEn = (current.specification_en ?? {}) as Record<string, unknown>;
+    const resistanceVal = String(
+      currentSpec['ความต้านทานไฟฟ้าสถิต'] ||
+      currentSpecEn['Footwear only Resistance'] ||
+      currentSpec['Footwear only Resistance / ความต้านทานไฟฟ้าสถิต'] ||
+      currentSpecEn['Footwear only Resistance / ความต้านทานไฟฟ้าสถิต'] ||
+      ''
+    );
+    resistanceHistoryRef.current = [{ value: resistanceVal, cursor: resistanceVal.length }];
+    resistanceHistoryIndexRef.current = 0;
+    setForm({
+      sku: current.sku,
+      product_name: current.product_name,
+      series: current.series,
+      brand: current.brand ?? '',
+      title: current.title ?? '',
+      specification: Object.fromEntries(
+        specificationRows.map((r) => [
+          r.key_th,
+          r.shared
+            ? resistanceVal
+            : String(currentSpec[r.key_th] ?? currentSpec[r.label] ?? currentSpec[r.key_en] ?? '')
+        ])
+      ),
+      specification_en: Object.fromEntries(
+        specificationRows.map((r) => [
+          r.key_en,
+          r.shared
+            ? resistanceVal
+            : String(currentSpecEn[r.key_en] ?? currentSpecEn[r.label] ?? currentSpecEn[r.key_th] ?? '')
+        ])
+      ),
+      size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])),
+      certificate_codes: current.certificate_codes ?? []
+    });
+    const mImages = Array.isArray(current.main_image)
+      ? current.main_image
+      : (current.main_image ? [current.main_image] : []);
+    setMainImagePaths(mImages);
+    const oImages = Array.isArray(current.other_image)
+      ? current.other_image
+      : (typeof current.other_image === 'string' && current.other_image
+          ? (() => { try { const p = JSON.parse(current.other_image); return Array.isArray(p) ? p : [p]; } catch { return [current.other_image]; } })()
+          : []);
+    setOtherImagePaths(oImages);
+    setDatasheetPath(current.datasheet_pdf ?? null);
+    setCertificatePdfPath(current.certificate_pdf ?? null);
+    setDatasheet(null);
+    setCertificatePdf(null);
+  };
+
+  const reloadProduct = async () => {
+    if (!id) return;
+    setLoading(true);
+    setError('');
+    setConflictData(null);
+    try {
+      const current = await request<Product>(`/api/v1/product/${id}`);
+      applyProductData(current);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let active = true;
     Promise.all([request<Series[]>('/api/v1/series'), request<Certificate[]>('/api/v1/certificate'), id ? request<Product>(`/api/v1/product/${id}`) : Promise.resolve(null)])
       .then(([seriesData, certificateData, current]) => {
         if (!active) return;
-        setSeriesList(seriesData); setCertificates(certificateData); setProduct(current);
+        setSeriesList(seriesData); setCertificates(certificateData);
         if (current) {
-          const currentSpec = (current.specification ?? {}) as Record<string, unknown>;
-          const currentSpecEn = (current.specification_en ?? {}) as Record<string, unknown>;
-          const resistanceVal = String(
-            currentSpec['ความต้านทานไฟฟ้าสถิต'] ||
-            currentSpecEn['Footwear only Resistance'] ||
-            currentSpec['Footwear only Resistance / ความต้านทานไฟฟ้าสถิต'] ||
-            currentSpecEn['Footwear only Resistance / ความต้านทานไฟฟ้าสถิต'] ||
-            ''
-          );
-          resistanceHistoryRef.current = [{ value: resistanceVal, cursor: resistanceVal.length }];
-          resistanceHistoryIndexRef.current = 0;
-          setForm({
-            sku: current.sku,
-            product_name: current.product_name,
-            series: current.series,
-            brand: current.brand ?? '',
-            title: current.title ?? '',
-            specification: Object.fromEntries(
-              specificationRows.map((r) => [
-                r.key_th,
-                r.shared
-                  ? resistanceVal
-                  : String(currentSpec[r.key_th] ?? currentSpec[r.label] ?? currentSpec[r.key_en] ?? '')
-              ])
-            ),
-            specification_en: Object.fromEntries(
-              specificationRows.map((r) => [
-                r.key_en,
-                r.shared
-                  ? resistanceVal
-                  : String(currentSpecEn[r.key_en] ?? currentSpecEn[r.label] ?? currentSpecEn[r.key_th] ?? '')
-              ])
-            ),
-            size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])),
-            certificate_codes: current.certificate_codes ?? []
-          });
-          const mImages = Array.isArray(current.main_image)
-            ? current.main_image
-            : (current.main_image ? [current.main_image] : []);
-          setMainImagePaths(mImages);
-          setOtherImagePaths(current.other_image ?? []);
+          applyProductData(current);
         } else if (seriesData.length) {
+          setProduct(null);
+          setDatasheetPath(null);
+          setCertificatePdfPath(null);
+          setDatasheet(null);
+          setCertificatePdf(null);
           setForm((old) => ({ ...old, series: seriesData[0].series_code }));
         }
       })
@@ -220,7 +289,7 @@ export function ProductEditor() {
   function toggleCertificate(code: string) { update('certificate_codes', form.certificate_codes.includes(code) ? form.certificate_codes.filter((entry) => entry !== code) : [...form.certificate_codes, code]); }
 
   async function submit(event: FormEvent) {
-    event.preventDefault(); setSaving(true); setError('');
+    event.preventDefault(); setSaving(true); setError(''); setConflictData(null);
     try {
       const body = new FormData();
       body.append('sku', form.sku.trim()); body.append('product_name', form.product_name.trim()); body.append('series', form.series);
@@ -229,17 +298,33 @@ export function ProductEditor() {
       body.append('certificate_codes', JSON.stringify(form.certificate_codes));
       body.append('main_image', JSON.stringify(mainImagePaths));
       body.append('other_image', JSON.stringify(otherImagePaths));
-      if (product?.datasheet_pdf) body.append('datasheet_pdf', product.datasheet_pdf);
-      if (product?.certificate_pdf) body.append('certificate_pdf', product.certificate_pdf);
+      body.append('datasheet_pdf', datasheetPath ?? '');
+      body.append('certificate_pdf', certificatePdfPath ?? '');
       for (const file of mainImages) body.append('main_image_files', file);
       for (const file of otherImages) body.append('other_image_files', file);
       if (datasheet) body.append('datasheet_pdf_file', datasheet);
       if (certificatePdf) body.append('certificate_pdf_file', certificatePdf);
-      if (id) body.append('product_id', id);
+      if (id) {
+        body.append('product_id', id);
+        if (product?.version !== undefined) {
+          body.append('version', String(product.version));
+        }
+      }
       const saved = await request<Product>('/api/v1/product', { method: id ? 'PUT' : 'POST', body });
       navigate('/dashboard', { replace: true, state: { notice: `${saved.product_name} saved successfully.` } });
-    } catch (e) { setError((e as Error).message); }
-    finally { setSaving(false); }
+    } catch (e: any) {
+      if (e?.status === 409 || e?.code === 'CONFLICT') {
+        setConflictData({
+          expected_version: e?.details?.expected_version,
+          current_version: e?.details?.current_version,
+          updated_by: e?.details?.updated_by,
+          updated_at: e?.details?.updated_at
+        });
+        setError('สินค้านี้ถูกแก้ไขโดย Admin ท่านอื่นแล้ว กรุณาโหลดข้อมูลล่าสุดก่อนทำการแก้ไขต่อ');
+      } else {
+        setError(e?.message || 'Failed to save product');
+      }
+    } finally { setSaving(false); }
   }
 
   async function viewDocument(kind: 'datasheet' | 'certificate') {
@@ -268,20 +353,43 @@ export function ProductEditor() {
     <Link className="ac-back-link" to="/dashboard"><ArrowLeft size={15} />Back to products</Link>
     <div className="ac-page-heading"><div><div className="ac-eyebrow">PRODUCT RECORD</div><h1>{editing ? 'Edit product' : 'New product'}</h1><p>Product fields follow the Product API model. A series is required for every product.</p></div><div className="ac-editor-status"><span className="ac-status-dot" />{editing ? 'Editing record' : 'Draft'}</div></div>
     <Notice error={error} onDismiss={() => setError('')} />
+    {conflictData && (
+      <div className="ac-notice is-error" style={{ marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CircleAlert size={20} style={{ flexShrink: 0, color: '#dc2626' }} />
+          <div>
+            <strong style={{ display: 'block', fontSize: '13.5px', color: '#991b1b' }}>สินค้านี้ถูกแก้ไขโดย Admin ท่านอื่นแล้ว (Version Conflict)</strong>
+            <span style={{ display: 'block', fontSize: '12px', color: '#b91c1c', marginTop: 2 }}>
+              {conflictData.updated_by ? `แก้ไขล่าสุดโดย: ${conflictData.updated_by} ` : ''}
+              {conflictData.updated_at ? `(${new Date(conflictData.updated_at).toLocaleString('th-TH')}) ` : ''}
+              — ข้อมูลที่ท่านกำลังแก้ไขอยู่ไม่ใช่เวอร์ชันล่าสุด กรุณาโหลดข้อมูลใหม่เพื่อป้องกันการบันทึกทับ
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="ac-button"
+          onClick={reloadProduct}
+          style={{ flexShrink: 0, height: 34, fontSize: 12, padding: '0 14px', background: '#ffffff', color: '#b91c1c', borderColor: '#fca5a5', fontWeight: 700 }}
+        >
+          โหลดข้อมูลล่าสุด
+        </button>
+      </div>
+    )}
     <form onSubmit={submit} className="ac-editor-layout">
       <div className="ac-editor-main">
         <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon"><Box size={17} /></div><div><h2>Product details</h2><p>Core identity and series assignment</p></div></div>
-          <div className="ac-form-grid"><Field label="Product name *"><input className="ac-input" required value={form.product_name} onChange={(e) => update('product_name', e.target.value)} placeholder="Product name" /></Field>
-            <Field label="SKU *"><input className="ac-input" required value={form.sku} onChange={(e) => update('sku', e.target.value)} placeholder="SKU" /></Field>
+          <div className="ac-form-grid"><Field label="Product name *"><input className="ac-input" required value={form.product_name} onChange={(e) => update('product_name', e.target.value)} /></Field>
+            <Field label="SKU *"><input className="ac-input" required value={form.sku} onChange={(e) => update('sku', e.target.value)} /></Field>
             <Field label="Series *"><select className="ac-input" required value={form.series} onChange={(e) => update('series', e.target.value)}><option value="" disabled>Select a series</option>{seriesList.map((entry) => <option key={entry.series_code} value={entry.series_code}>{entry.series_name} · {entry.series_code}</option>)}</select></Field>
-            <Field label="Brand"><input className="ac-input" value={form.brand} onChange={(e) => update('brand', e.target.value)} placeholder="Brand name" /></Field>
-            <Field label="Title" className="ac-field-span"><input className="ac-input" value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="Optional display title" /></Field>
+            <Field label="Brand"><input className="ac-input" value={form.brand} onChange={(e) => update('brand', e.target.value)} /></Field>
+            <Field label="Title" className="ac-field-span"><input className="ac-input" value={form.title} onChange={(e) => update('title', e.target.value)} /></Field>
           </div>
         </section>
 
         <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon purple"><FileText size={17} /></div><div><h2>Product Specifications / รายละเอียดสินค้า</h2><p>กรอกข้อมูลทั้งภาษาไทย (TH) และภาษาอังกฤษ (EN)</p></div></div>
           <div className="ac-spec-table">
-            {specificationRows.map(({ key_th, key_en, label, placeholder_th, placeholder_en, placeholder, shared }) => {
+            {specificationRows.map(({ key_th, key_en, label, shared }) => {
               if (shared) {
                 const val = form.specification[key_th] || form.specification_en[key_en] || '';
                 const setShared = (v: string) => setForm((curr) => ({
@@ -326,7 +434,6 @@ export function ProductEditor() {
                           setShared(nextVal);
                         }}
                         onKeyDown={handleResistanceKeyDown}
-                        placeholder={placeholder}
                       />
                       <div className="ac-superscript-picker" onKeyDown={handleResistanceKeyDown}>
                         <button
@@ -348,7 +455,7 @@ export function ProductEditor() {
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => insertSuperscript(digit)}
                             >
-                              {digit}
+                              {index}
                             </button>
                           ))}
                         </div>
@@ -367,7 +474,6 @@ export function ProductEditor() {
                         className="ac-input"
                         value={form.specification[key_th] ?? ''}
                         onChange={(e) => update('specification', { ...form.specification, [key_th]: e.target.value })}
-                        placeholder={placeholder_th}
                       />
                     </label>
                     <label className="ac-spec-language">
@@ -376,7 +482,6 @@ export function ProductEditor() {
                         className="ac-input"
                         value={form.specification_en[key_en] ?? ''}
                         onChange={(e) => update('specification_en', { ...form.specification_en, [key_en]: e.target.value })}
-                        placeholder={placeholder_en}
                       />
                     </label>
                   </div>
@@ -392,7 +497,7 @@ export function ProductEditor() {
             <input type="checkbox" checked={form.certificate_codes.includes(certificate.certificate_code)} onChange={() => toggleCertificate(certificate.certificate_code)} />
             <span className="ac-check-box">{form.certificate_codes.includes(certificate.certificate_code) && <Check size={12} />}</span>
             <AuthImage path={certificate.image} alt="" className="ac-cert-thumb" />
-            <span><strong>{certificate.certificate_code}</strong><small>Certificate type</small></span>
+            <span><strong>{certificate.certificate_code}</strong><small>{certificate.certificate_name}</small></span>
           </label>)}</div> : <div className="ac-inline-empty">No certificate types yet. <Link to="/certificates">Add a certificate type</Link></div>}
         </section>
       </div>
@@ -432,38 +537,51 @@ export function ProductEditor() {
               <div className="ac-new-images-wrap">
                 <small className="ac-new-images-label">New main images to upload:</small>
                 <div className="ac-existing-images">
-                  {mainImages.map((file, idx) => {
-                    const objectUrl = URL.createObjectURL(file);
-                    return (
-                      <div className="ac-existing-image" key={`${file.name}-${idx}`}>
-                        <button
-                          type="button"
-                          className="ac-existing-image-thumb"
-                          onClick={() => setPreviewModal({ file, title: file.name })}
-                          title="Click to preview new image"
-                        >
-                          <img src={objectUrl} alt={file.name} />
-                          <span className="ac-thumb-zoom-icon"><Eye size={13} /></span>
-                        </button>
-                        <button
-                          type="button"
-                          className="ac-existing-image-remove"
-                          title="Remove new image"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setMainImages((current) => current.filter((_, i) => i !== idx));
-                          }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {mainImages.map((file, idx) => (
+                    <div className="ac-existing-image" key={`${file.name}-${idx}`}>
+                      <button
+                        type="button"
+                        className="ac-existing-image-thumb"
+                        onClick={() => setPreviewModal({ file, title: file.name })}
+                        title="Click to preview new image"
+                      >
+                        <FileImageThumb file={file} alt={file.name} />
+                        <span className="ac-thumb-zoom-icon"><Eye size={13} /></span>
+                      </button>
+                      <button
+                        type="button"
+                        className="ac-existing-image-remove"
+                        title="Remove new image"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setMainImages((current) => current.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-            <label className="ac-upload-drop"><UploadCloud size={17} /><span>{mainImages.length ? `${mainImages.length} new main image(s) selected` : 'Upload main image'}</span><input hidden type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => setMainImages(Array.from(e.target.files ?? []))} /></label>
+            <label className="ac-upload-drop">
+              <UploadCloud size={17} />
+              <span>{mainImages.length ? `${mainImages.length} new main image(s) selected` : 'Upload main image'}</span>
+              <input
+                hidden
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length > 0) {
+                    setMainImages((prev) => [...prev, ...files]);
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </Field>
           <Field label="Additional images" hint={otherImagePaths.length ? `${otherImagePaths.length} linked image(s)` : 'Add one or more product images'}>
             {otherImagePaths.length > 0 && (
@@ -499,67 +617,88 @@ export function ProductEditor() {
               <div className="ac-new-images-wrap">
                 <small className="ac-new-images-label">New additional images to upload:</small>
                 <div className="ac-existing-images">
-                  {otherImages.map((file, idx) => {
-                    const objectUrl = URL.createObjectURL(file);
-                    return (
-                      <div className="ac-existing-image" key={`${file.name}-${idx}`}>
-                        <button
-                          type="button"
-                          className="ac-existing-image-thumb"
-                          onClick={() => setPreviewModal({ file, title: file.name })}
-                          title="Click to preview new image"
-                        >
-                          <img src={objectUrl} alt={file.name} />
-                          <span className="ac-thumb-zoom-icon"><Eye size={13} /></span>
-                        </button>
-                        <button
-                          type="button"
-                          className="ac-existing-image-remove"
-                          title="Remove new image"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setOtherImages((current) => current.filter((_, i) => i !== idx));
-                          }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {otherImages.map((file, idx) => (
+                    <div className="ac-existing-image" key={`${file.name}-${idx}`}>
+                      <button
+                        type="button"
+                        className="ac-existing-image-thumb"
+                        onClick={() => setPreviewModal({ file, title: file.name })}
+                        title="Click to preview new image"
+                      >
+                        <FileImageThumb file={file} alt={file.name} />
+                        <span className="ac-thumb-zoom-icon"><Eye size={13} /></span>
+                      </button>
+                      <button
+                        type="button"
+                        className="ac-existing-image-remove"
+                        title="Remove new image"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setOtherImages((current) => current.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-            <label className="ac-upload-drop"><UploadCloud size={17} /><span>{otherImages.length ? `${otherImages.length} new file(s) selected` : 'Upload image'}</span><input hidden type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => setOtherImages(Array.from(e.target.files ?? []))} /></label>
+            <label className="ac-upload-drop">
+              <UploadCloud size={17} />
+              <span>{otherImages.length ? `${otherImages.length} new file(s) selected` : 'Upload image'}</span>
+              <input
+                hidden
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length > 0) {
+                    setOtherImages((prev) => [...prev, ...files]);
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </Field>
         </section>
-        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon red"><FileText size={17} /></div><div><h2>Documents</h2><p>PDF files · max 30 MiB</p></div></div>
+        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon red"><FileText size={17} /></div><div><h2>Documents</h2><p>PDF files · max 30 MB</p></div></div>
           <FileField
             label="Datasheet PDF"
-            current={product?.datasheet_pdf}
+            current={datasheetPath}
             file={datasheet}
             accept="application/pdf"
             onChange={setDatasheet}
             onView={() => {
               if (datasheet) viewLocalFile(datasheet, 'Datasheet PDF');
-              else if (product?.datasheet_pdf) void viewDocument('datasheet');
+              else if (datasheetPath) void viewDocument('datasheet');
             }}
             onClearFile={() => setDatasheet(null)}
+            onRemove={() => {
+              setDatasheetPath(null);
+              setDatasheet(null);
+            }}
           />
           <FileField
             label="Certificate PDF"
-            current={product?.certificate_pdf}
+            current={certificatePdfPath}
             file={certificatePdf}
             accept="application/pdf"
             onChange={setCertificatePdf}
             onView={() => {
               if (certificatePdf) viewLocalFile(certificatePdf, 'Certificate PDF');
-              else if (product?.certificate_pdf) void viewDocument('certificate');
+              else if (certificatePdfPath) void viewDocument('certificate');
             }}
             onClearFile={() => setCertificatePdf(null)}
+            onRemove={() => {
+              setCertificatePdfPath(null);
+              setCertificatePdf(null);
+            }}
           />
         </section>
-        {product && <section className="ac-audit-card"><div><ShieldCheck size={15} />LAST UPDATED</div><p>Created <strong>{dateLabel(product.create_ts)}</strong></p><small>by {product.create_by}</small><p>Last updated <strong>{dateLabel(product.update_ts)}</strong></p><small>by {product.update_by}</small></section>}
+        {product && <section className="ac-audit-card"><div><ShieldCheck size={15} />LAST UPDATED</div><p>Created <strong>{dateLabel(product.create_ts)}</strong></p><small>{product.create_by}</small><p>Last updated <strong>{dateLabel(product.update_ts)}</strong></p><small>{product.update_by}</small></section>}
         {seriesList.length === 0 && <div className="ac-inline-empty">Create a series before saving products. <Link to="/series">Manage series</Link></div>}
       </aside>
       <div className="ac-form-actions"><button type="button" className="ac-button ac-button-quiet" onClick={() => navigate('/dashboard')}>Cancel</button><button type="submit" className="ac-button ac-button-primary" disabled={saving || !seriesList.length}>{saving ? <LoaderCircle className="ac-spin" size={15} /> : <Check size={15} />}{saving ? 'Saving…' : editing ? 'Save changes' : 'Create product'}</button></div>
@@ -581,70 +720,19 @@ export function ProductEditor() {
               </button>
             </div>
             <div className="ac-image-preview-modal-body">
-              {previewModal.file ? (
-                <img
-                  src={URL.createObjectURL(previewModal.file)}
-                  alt={previewModal.title}
-                  className="ac-image-preview-modal-img"
-                />
-              ) : (
-                <AuthImage
-                  path={previewModal.path}
-                  alt={previewModal.title}
-                  className="ac-image-preview-modal-img"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {docModal && (
-        <div className="ac-doc-preview-modal-backdrop" onClick={closeDocModal}>
-          <div className="ac-doc-preview-modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="ac-doc-preview-modal-header">
-              <div className="ac-doc-preview-modal-title">
-                <FileText size={17} />
-                <span>{docModal.title}</span>
-              </div>
-              <div className="ac-doc-preview-modal-actions">
-                <button
-                  type="button"
-                  className="ac-button ac-button-quiet"
-                  onClick={() => window.open(docModal.url, '_blank')}
-                  title="Open PDF in new tab"
-                >
-                  <ExternalLink size={14} />
-                  <span>Open in new tab</span>
-                </button>
-                <a
-                  className="ac-button ac-button-quiet"
-                  href={docModal.url}
-                  download={docModal.downloadName}
-                  title="Download PDF"
-                >
-                  <ArrowDownToLine size={14} />
-                  <span>Download</span>
-                </a>
-                <button
-                  type="button"
-                  className="ac-image-preview-modal-close"
-                  onClick={closeDocModal}
-                  title="Close preview (Esc)"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-            <div className="ac-doc-preview-modal-body">
-              <iframe
-                src={docModal.url}
-                className="ac-doc-iframe"
-                title={docModal.title}
+              <PreviewModalImg
+                file={previewModal.file}
+                path={previewModal.path}
+                title={previewModal.title}
               />
             </div>
           </div>
         </div>
       )}
+      <DocPreviewModal
+        modal={docModal}
+        onClose={closeDocModal}
+      />
     </form>
   </div>;
 }

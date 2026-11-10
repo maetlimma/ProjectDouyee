@@ -50,9 +50,8 @@ export const seriesRoutes = new Elysia({ prefix: '/series' })
     body: t.Object({ series_code: t.String({ minLength: 1 }), series_name: t.String({ minLength: 1 }) }),
     detail: { ...secured, tags: ['Series'], summary: 'Update series' }
   })
-  .get('/', async ({ request, jwt, set }) => {
+  .get('/', async ({ set }) => {
     try {
-      await actor(request, jwt);
       return await listSeries();
     } catch (error) {
       const err = statusError(error);
@@ -60,7 +59,7 @@ export const seriesRoutes = new Elysia({ prefix: '/series' })
       return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
     }
   }, {
-    detail: { ...secured, tags: ['Series'], summary: 'List series' }
+    detail: { tags: ['Series'], summary: 'List series' }
   })
   .delete('/', async ({ body, request, jwt, set }) => {
     try {

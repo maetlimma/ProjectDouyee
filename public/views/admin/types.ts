@@ -14,6 +14,7 @@ export type Product = {
   certificate_pdf: string | null;
   other: Record<string, unknown>;
   certificate_codes: string[];
+  version: number;
   create_ts: string;
   update_ts: string;
   create_by: string;
@@ -31,6 +32,7 @@ export type Series = {
 
 export type Certificate = {
   certificate_code: string;
+  certificate_name: string | null;
   image: string | null;
   create_ts: string;
   update_ts: string;
@@ -51,6 +53,13 @@ export type Catalogue = {
 export type Group = {
   series: string;
   products: Product[];
+};
+
+export type AdminAccount = {
+  adminId: string;
+  email: string;
+  createTs: string;
+  updateTs: string;
 };
 
 export type SortKey = 'sku' | 'name' | 'certs' | 'updated';

@@ -27,14 +27,16 @@ describe('product input validation', () => {
     expect(product.specification_en).toEqual({ Upper: 'Black Split Barton leather' });
   });
 
-  it('accepts single string path for main_image as backward compatibility', () => {
+  it('accepts single string path for main_image and other_image as backward compatibility', () => {
     const product = parseProductInput({
       sku: 'SKU-2',
       product_name: 'Item 2',
       series: 'e9 Series',
-      main_image: '/files/images/single.png'
+      main_image: '/files/images/single.png',
+      other_image: '/files/images/other.png'
     });
     expect(product.main_image).toEqual(['/files/images/single.png']);
+    expect(product.other_image).toEqual(['/files/images/other.png']);
   });
 
   it('returns field-specific errors for malformed JSON values', () => {

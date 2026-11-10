@@ -14,6 +14,7 @@ export interface ProductRecord {
   certificate_pdf: string | null;
   other: Record<string, unknown>;
   certificate_codes: string[];
+  version: number;
   create_ts: string;
   update_ts: string;
   create_by: string;
@@ -31,6 +32,7 @@ export interface SeriesRecord {
 
 export interface CertificateRecord {
   certificate_code: string;
+  certificate_name: string | null;
   image: string | null;
   create_ts: string;
   update_ts: string;

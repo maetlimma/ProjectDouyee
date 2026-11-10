@@ -149,11 +149,11 @@ export function SeriesManager() {
               <p>Series code is the product foreign key.</p>
             </div>
           </div>
-          <Field label="Series code *" hint="Use the API code, for example “ESD Series”.">
-            <input className="ac-input" required value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. ESD Series" />
+          <Field label="Series code *">
+            <input className="ac-input" required value={code} onChange={(e) => setCode(e.target.value)} />
           </Field>
           <Field label="Series name *">
-            <input className="ac-input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Display name" />
+            <input className="ac-input" required value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <div className="ac-resource-actions">
             <button className="ac-button ac-button-primary" disabled={saving}>
@@ -176,14 +176,14 @@ export function SeriesManager() {
           ) : items.length ? (
             <div className="ac-table-scroll">
               <table className="ac-table">
-                <thead><tr><th>Series</th><th>Code</th><th>Updated</th><th /></tr></thead>
+                <thead><tr><th>Series</th><th>Code</th><th>Last Updated</th><th /></tr></thead>
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.series_code}>
                       <td>
                         <div className="ac-product-cell">
                           <span className="ac-series-symbol">{initials(item.series_name)}</span>
-                          <span><strong>{item.series_name}</strong><small>Product grouping</small></span>
+                          <span><strong>{item.series_name}</strong></span>
                         </div>
                       </td>
                       <td><code>{item.series_code}</code></td>

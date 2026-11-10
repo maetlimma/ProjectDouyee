@@ -18,7 +18,16 @@ export async function request<T = any>(path: string, init: RequestInit = {}): Pr
     throw new Error(`Expected JSON from ${path}; received ${contentType || 'an unknown content type'}.`);
   }
   const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message ?? data?.message ?? `Request failed (${response.status})`);
+  if (!response.ok) {
+    const message = data?.error?.message ?? data?.message ?? `Request failed (${response.status})`;
+    const error = new Error(message);
+    Object.assign(error, {
+      status: response.status,
+      code: data?.error?.code,
+      details: data?.error?.details
+    });
+    throw error;
+  }
   return data as T;
 }
 

@@ -1,10 +1,13 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react';
-import { ArrowDownToLine, Check, FileText, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, UploadCloud, X } from 'lucide-react';
+import { Check, Eye, FileText, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react';
 import { Catalogue } from './types';
 import { dateLabel, request, token } from './api';
 import { Field } from '../../components/admin/Field';
+import { FileField } from '../../components/admin/FileField';
 import { Notice } from '../../components/admin/Notice';
 import { ConfirmDeleteModal } from '../../components/admin/ConfirmDeleteModal';
+import { DocPreviewModal } from '../../components/admin/DocPreviewModal';
+import { AuthImage } from '../../components/admin/AuthImage';
 
 export function CataloguesManager() {
   const [items, setItems] = useState<Catalogue[]>([]);
@@ -38,6 +41,15 @@ export function CataloguesManager() {
   const [deletingCatalogue, setDeletingCatalogue] = useState<Catalogue | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  const [docModal, setDocModal] = useState<{ url: string; title: string; downloadName: string } | null>(null);
+
+  const closeDocModal = () => {
+    if (docModal?.url) {
+      URL.revokeObjectURL(docModal.url);
+    }
+    setDocModal(null);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -153,13 +165,19 @@ export function CataloguesManager() {
 
   async function openPdf(item: Catalogue) {
     try {
+      setError('');
       const response = await fetch(`/api/v1/catalogue/${item.catalogue_id}/pdf`, {
         headers: { Authorization: `Bearer ${token()}` }
       });
       if (!response.ok) throw new Error('The catalogue PDF could not be opened.');
-      const url = URL.createObjectURL(await response.blob());
-      window.open(url, '_blank', 'noopener');
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      const blob = await response.blob();
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      setDocModal({
+        url,
+        title: `${item.catalogue_name} · Catalogue PDF`,
+        downloadName: `${item.catalogue_name}.pdf`
+      });
     } catch (e) {
       setError((e as Error).message);
     }
@@ -188,20 +206,21 @@ export function CataloguesManager() {
             </div>
           </div>
           <Field label="Catalogue name *">
-            <input className="ac-input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Safety Footwear Catalogue" />
+            <input className="ac-input" required value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Catalogue PDF" hint={pdf?.name || 'PDF · max 30 MiB'}>
-            <label className="ac-upload-drop">
-              <UploadCloud size={17} />
-              <span>{pdf?.name || 'Upload PDF'}</span>
-              <input hidden type="file" accept="application/pdf,.pdf" onChange={(e) => setPdf(e.target.files?.[0] ?? null)} />
-            </label>
-            {pdf && (
-              <button type="button" className="ac-button ac-button-quiet" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setPdf(null)}>
-                <X size={13} /> Cancel selected PDF
-              </button>
-            )}
-          </Field>
+          <FileField
+            label="Catalogue PDF"
+            file={pdf}
+            accept="application/pdf,.pdf"
+            onChange={setPdf}
+            onView={() => {
+              if (pdf) {
+                const url = URL.createObjectURL(pdf);
+                setDocModal({ url, title: `${pdf.name} · (Selected PDF)`, downloadName: pdf.name });
+              }
+            }}
+            onClearFile={() => setPdf(null)}
+          />
           <div className="ac-resource-actions">
             <button className="ac-button ac-button-primary" disabled={saving}>
               {saving ? <LoaderCircle className="ac-spin" size={15} /> : <Plus size={15} />}Create catalogue
@@ -229,7 +248,6 @@ export function CataloguesManager() {
                 <option value="catalogue_name">Name</option>
                 <option value="createTs">Created</option>
                 <option value="updateTs">Updated</option>
-                <option value="catalogue_id">ID</option>
               </select>
             </label>
             <button className="ac-button ac-button-quiet" onClick={() => setOrder((value) => value === 'asc' ? 'desc' : 'asc')}>
@@ -242,27 +260,42 @@ export function CataloguesManager() {
             <>
               <div className="ac-table-scroll">
                 <table className="ac-table">
-                  <thead><tr><th>Catalogue</th><th>PDF</th><th>Updated</th><th>Created by</th><th /></tr></thead>
+                  <thead><tr><th>Catalogue</th><th>PDF</th><th>Last Updated</th><th /></tr></thead>
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.catalogue_id}>
                         <td>
                           <div className="ac-product-cell">
-                            <span className="ac-series-symbol"><FileText size={16} /></span>
-                            <span><strong>{item.catalogue_name}</strong><small><code>{item.catalogue_id}</code></small></span>
+                            {item.catalogue_pdf ? (
+                              <span className="ac-catalogue-thumb-wrap">
+                                <AuthImage
+                                  path={`/api/v1/catalogue/${item.catalogue_id}/cover`}
+                                  alt={item.catalogue_name}
+                                  className="ac-catalogue-thumb"
+                                />
+                              </span>
+                            ) : (
+                              <span className="ac-series-symbol"><FileText size={16} /></span>
+                            )}
+                            <span><strong>{item.catalogue_name}</strong></span>
                           </div>
                         </td>
                         <td>
                           {item.catalogue_pdf ? (
-                            <button className="ac-download-button" onClick={() => void openPdf(item)}>
-                              <ArrowDownToLine size={14} />View PDF
+                            <button
+                              type="button"
+                              className="ac-view-button"
+                              onClick={() => void openPdf(item)}
+                              title="View catalogue PDF"
+                            >
+                              <Eye size={14} />
+                              <span>View</span>
                             </button>
                           ) : (
                             <span className="ac-muted">No PDF</span>
                           )}
                         </td>
                         <td><span className="ac-date">{dateLabel(item.updateTs)}</span><small className="ac-audit">{item.updateBy}</small></td>
-                        <td>{item.createBy}</td>
                         <td>
                           <div className="ac-row-actions">
                             <button className="ac-icon-button" title="Edit catalogue" onClick={() => startEdit(item)}><Pencil size={15} /></button>
@@ -310,32 +343,25 @@ export function CataloguesManager() {
             <form className="ac-edit-modal-form" onSubmit={submitEdit}>
               <div className="ac-edit-modal-body">
                 <Notice error={modalError} inline />
-                <Field label="Catalogue ID" hint="Identifier is assigned automatically.">
-                  <input className="ac-input" disabled value={editingCatalogue.catalogue_id} />
-                </Field>
                 <Field label="Catalogue name *">
                   <input className="ac-input" required value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
                 </Field>
-                <Field label="Catalogue PDF" hint={editPdf?.name || (editingCatalogue.catalogue_pdf ? 'Existing PDF on server' : 'PDF · max 30 MiB')}>
-                  {editingCatalogue.catalogue_pdf && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <span className="ac-file-badge"><FileText size={14} />Current: {editingCatalogue.catalogue_pdf.split('/').pop()}</span>
-                      <button type="button" className="ac-view-button" onClick={() => void openPdf(editingCatalogue)} title="View current PDF">
-                        View
-                      </button>
-                    </div>
-                  )}
-                  <label className="ac-upload-drop">
-                    <UploadCloud size={17} />
-                    <span>{editPdf?.name || (editingCatalogue.catalogue_pdf ? 'Replace PDF' : 'Upload PDF')}</span>
-                    <input hidden type="file" accept="application/pdf,.pdf" onChange={(e) => setEditPdf(e.target.files?.[0] ?? null)} />
-                  </label>
-                  {editPdf && (
-                    <button type="button" className="ac-button ac-button-quiet" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setEditPdf(null)}>
-                      <X size={13} /> Cancel selected PDF
-                    </button>
-                  )}
-                </Field>
+                <FileField
+                  label="Catalogue PDF"
+                  current={editingCatalogue.catalogue_pdf}
+                  file={editPdf}
+                  accept="application/pdf,.pdf"
+                  onChange={setEditPdf}
+                  onView={() => {
+                    if (editPdf) {
+                      const url = URL.createObjectURL(editPdf);
+                      setDocModal({ url, title: `${editPdf.name} · (Selected PDF)`, downloadName: editPdf.name });
+                    } else if (editingCatalogue.catalogue_pdf) {
+                      void openPdf(editingCatalogue);
+                    }
+                  }}
+                  onClearFile={() => setEditPdf(null)}
+                />
               </div>
               <div className="ac-edit-modal-actions">
                 <button type="button" className="ac-button ac-button-quiet" onClick={closeEditModal} disabled={modalSaving}>
@@ -360,6 +386,11 @@ export function CataloguesManager() {
         error={deleteError}
         onConfirm={handleConfirmDelete}
         onClose={() => { if (!deleteLoading) setDeletingCatalogue(null); }}
+      />
+
+      <DocPreviewModal
+        modal={docModal}
+        onClose={closeDocModal}
       />
     </div>
   );

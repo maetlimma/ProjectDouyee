@@ -8,9 +8,11 @@ export interface ProductInput {
   main_image?: unknown[]; other_image?: unknown[]; specification?: Record<string, unknown>; specification_en?: Record<string, unknown>;
   size_weights?: Record<string, unknown>; datasheet_pdf?: string | null; certificate_pdf?: string | null;
   other?: Record<string, unknown>; certificate_codes?: string[];
+  version?: number;
+  expected_version?: number;
 }
 export { parseProductInput };
-const columns = 'product_id, sku, product_name, series, brand, title, main_image, other_image, specification, specification_en, size_weights, datasheet_pdf, certificate_pdf, other, create_ts, update_ts, create_by, update_by';
+const columns = 'product_id, sku, product_name, series, brand, title, main_image, other_image, specification, specification_en, size_weights, datasheet_pdf, certificate_pdf, other, version, create_ts, update_ts, create_by, update_by';
 
 export async function listProductsGrouped() {
   const { rows } = await pool.query(`SELECT ${columns} FROM product ORDER BY series, product_name`);
@@ -32,17 +34,54 @@ export async function getProduct(id: string) {
   } finally { client.release(); }
 }
 
-export async function saveProduct(input: ProductInput, actor: string, id?: string) {
+export async function saveProduct(input: ProductInput, actor: string, id?: string, expectedVersion?: number) {
   const client = await pool.connect();
   const productId = id ?? randomUUID();
+  const targetVersion = expectedVersion ?? input.expected_version ?? input.version;
   try {
     await client.query('BEGIN');
-    const values = [productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null, JSON.stringify(input.main_image ?? []), JSON.stringify(input.other_image ?? []), JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}), JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null, JSON.stringify(input.other ?? {}), actor];
+    const values = id
+      ? [
+          productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null,
+          JSON.stringify(input.main_image ?? []), JSON.stringify(input.other_image ?? []),
+          JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}),
+          JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null,
+          JSON.stringify(input.other ?? {}), actor, targetVersion ?? null
+        ]
+      : [
+          productId, input.sku, input.product_name, input.series, input.brand ?? null, input.title ?? null,
+          JSON.stringify(input.main_image ?? []), JSON.stringify(input.other_image ?? []),
+          JSON.stringify(input.specification ?? {}), JSON.stringify(input.specification_en ?? {}),
+          JSON.stringify(input.size_weights ?? {}), input.datasheet_pdf ?? null, input.certificate_pdf ?? null,
+          JSON.stringify(input.other ?? {}), actor
+        ];
     const query = id
-      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7::jsonb, other_image=$8::jsonb, specification=$9::jsonb, specification_en=$10::jsonb, size_weights=$11::jsonb, datasheet_pdf=$12, certificate_pdf=$13, other=$14::jsonb, update_by=$15, update_ts=now() WHERE product_id=$1 RETURNING ${columns}`
+      ? `UPDATE product SET sku=$2, product_name=$3, series=$4, brand=$5, title=$6, main_image=$7::jsonb, other_image=$8::jsonb, specification=$9::jsonb, specification_en=$10::jsonb, size_weights=$11::jsonb, datasheet_pdf=$12, certificate_pdf=$13, other=$14::jsonb, version=version+1, update_by=$15, update_ts=now() WHERE product_id=$1 AND ($16::int IS NULL OR version = $16::int) RETURNING ${columns}`
       : `INSERT INTO product (product_id,sku,product_name,series,brand,title,main_image,other_image,specification,specification_en,size_weights,datasheet_pdf,certificate_pdf,other,create_by,update_by) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14::jsonb,$15,$15) RETURNING ${columns}`;
     const result = await client.query(query, values);
-    if (!result.rows[0]) { await client.query('ROLLBACK'); return null; }
+    if (!result.rows[0]) {
+      if (id && targetVersion !== undefined && targetVersion !== null) {
+        const current = await client.query('SELECT version, update_by, update_ts FROM product WHERE product_id=$1', [productId]);
+        if (current.rows[0]) {
+          await client.query('ROLLBACK');
+          const err = new Error('Product was modified by another user. Please refresh and try again.');
+          Object.assign(err, {
+            status: 409,
+            code: 'CONFLICT',
+            details: {
+              field: 'version',
+              expected_version: targetVersion,
+              current_version: current.rows[0].version,
+              updated_by: current.rows[0].update_by,
+              updated_at: current.rows[0].update_ts
+            }
+          });
+          throw err;
+        }
+      }
+      await client.query('ROLLBACK');
+      return null;
+    }
     const certificates = [...new Set(input.certificate_codes ?? [])];
     await client.query('DELETE FROM certificate_product WHERE product_id=$1 AND NOT (certificate_code = ANY($2::text[]))', [productId, certificates]);
     for (const code of certificates) await client.query(`INSERT INTO certificate_product (product_id,certificate_code,create_by,update_by) VALUES ($1,$2,$3,$3) ON CONFLICT (product_id,certificate_code) DO UPDATE SET update_by=EXCLUDED.update_by, update_ts=now()`, [productId, code, actor]);
@@ -70,20 +109,44 @@ export async function prepareProductWrite(body: Record<string, unknown>, old?: R
   const dataSheet = asFile(body.datasheet_pdf_file);
   const certPdf = asFile(body.certificate_pdf_file);
   const extras = body.other_image_files ? (Array.isArray(body.other_image_files) ? body.other_image_files : [body.other_image_files]) : [];
+  const oldMain = Array.isArray(old?.main_image) ? old.main_image : (old?.main_image ? [old.main_image] : []);
+  const baseMain = body.main_image !== undefined
+    ? (Array.isArray(input.main_image) ? input.main_image : [])
+    : oldMain;
   if (mainFiles.length) {
     const savedMain = (await Promise.all(mainFiles.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean);
-    input.main_image = [...(input.main_image ?? []), ...savedMain];
-  } else if (body.main_image === undefined && old?.main_image) {
-    input.main_image = Array.isArray(old.main_image) ? old.main_image : [old.main_image];
+    input.main_image = [...baseMain, ...savedMain];
+  } else {
+    input.main_image = baseMain;
   }
-  if (dataSheet) input.datasheet_pdf = (await saveUpload(dataSheet, 'documents')) ?? input.datasheet_pdf ?? old?.datasheet_pdf;
-  else input.datasheet_pdf ||= old?.datasheet_pdf ?? null;
-  if (certPdf) input.certificate_pdf = (await saveUpload(certPdf, 'documents')) ?? input.certificate_pdf ?? old?.certificate_pdf;
-  else input.certificate_pdf ||= old?.certificate_pdf ?? null;
+  if (dataSheet) {
+    input.datasheet_pdf = (await saveUpload(dataSheet, 'documents')) ?? null;
+  } else if (body.datasheet_pdf !== undefined) {
+    input.datasheet_pdf = typeof body.datasheet_pdf === 'string' && body.datasheet_pdf.trim() && body.datasheet_pdf !== 'null'
+      ? body.datasheet_pdf.trim()
+      : null;
+  } else {
+    input.datasheet_pdf = old?.datasheet_pdf ?? null;
+  }
+
+  if (certPdf) {
+    input.certificate_pdf = (await saveUpload(certPdf, 'documents')) ?? null;
+  } else if (body.certificate_pdf !== undefined) {
+    input.certificate_pdf = typeof body.certificate_pdf === 'string' && body.certificate_pdf.trim() && body.certificate_pdf !== 'null'
+      ? body.certificate_pdf.trim()
+      : null;
+  } else {
+    input.certificate_pdf = old?.certificate_pdf ?? null;
+  }
+  const oldOther = Array.isArray(old?.other_image) ? old.other_image : (old?.other_image ? [old.other_image] : []);
+  const baseOther = body.other_image !== undefined
+    ? (Array.isArray(input.other_image) ? input.other_image : [])
+    : oldOther;
   if (extras.length) {
-    input.other_image = [...(input.other_image ?? []), ...(await Promise.all(extras.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean)];
-  } else if (body.other_image === undefined && old?.other_image) {
-    input.other_image = Array.isArray(old.other_image) ? old.other_image : [old.other_image];
+    const savedExtras = (await Promise.all(extras.map((file) => saveUpload(asFile(file), 'images')))).filter(Boolean);
+    input.other_image = [...baseOther, ...savedExtras];
+  } else {
+    input.other_image = baseOther;
   }
   return input;
 }

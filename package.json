@@ -10,6 +10,7 @@
     "db:rollback": "bun scripts/migrate.ts down",
     "admin:create": "bun scripts/create-admin.ts",
     "test": "bun test",
+    "test:email": "bun scripts/test-email.ts",
     "typecheck": "tsc --noEmit",
     "brochure:build": "bun scripts/build-brochure.ts"
   },
@@ -20,7 +21,9 @@
     "@elysiajs/swagger": "^1.3.0",
     "elysia": "latest",
     "lucide-react": "^1.24.0",
+    "mupdf": "1.28.6",
     "node-pg-migrate": "^8.0.4",
+    "nodemailer": "^10.4.0",
     "page-flip": "2.0.7",
     "pg": "^8.16.3",
     "react": "^19.2.7",
@@ -29,10 +32,10 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.15.5",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "mupdf": "1.28.6",
     "typescript": "^5.9.3"
   }
 }

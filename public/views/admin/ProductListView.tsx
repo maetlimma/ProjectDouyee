@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, Award, Box, Check, CheckSquare, ChevronDown, ChevronRight, CircleAlert,
+  ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, Award, Box, Check, CheckSquare, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
   Copy, ExternalLink, Eye, FileText, Filter, Layers3, LayoutGrid, List, LoaderCircle,
   PackagePlus, Pencil, Plus, RefreshCw, Search, ShieldCheck, Square, Trash2, X
 } from 'lucide-react';
@@ -13,12 +13,112 @@ import { AuthImage } from '../../components/admin/AuthImage';
 import { ConfirmDeleteModal } from '../../components/admin/ConfirmDeleteModal';
 import { DocPreviewModal } from '../../components/admin/DocPreviewModal';
 
+const PAGE_SIZE = 20;
+
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total];
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
+function SeriesPagination({
+  totalItems,
+  currentPage,
+  totalPages,
+  pageSize,
+  onPageChange,
+  className = ''
+}: {
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}) {
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+  const pageNumbers = getPageNumbers(currentPage, totalPages);
+
+  return (
+    <div className={`ac-series-pagination ${className}`}>
+      <div className="ac-series-pagination-info">
+        Showing <strong>{startItem}–{endItem}</strong> of <strong>{totalItems}</strong> products
+        {totalPages > 1 ? (
+          <span className="ac-muted" style={{ marginLeft: 6, fontSize: 11.5 }}>
+            (20 per page)
+          </span>
+        ) : null}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="ac-series-pagination-controls">
+          <button
+            type="button"
+            className="ac-page-btn"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            aria-label="Previous page"
+            title="Previous page"
+          >
+            <ChevronLeft size={14} />
+          </button>
+
+          {pageNumbers.map((p, idx) => {
+            if (p === '...') {
+              return (
+                <span key={`ellipsis-${idx}`} className="ac-page-ellipsis">
+                  …
+                </span>
+              );
+            }
+            const pageNum = p as number;
+            const isActive = pageNum === currentPage;
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                className={`ac-page-btn ${isActive ? 'is-active' : ''}`}
+                onClick={() => onPageChange(pageNum)}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="ac-page-btn"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            aria-label="Next page"
+            title="Next page"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ProductList() {
   const navigate = useNavigate();
   const location = useLocation();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [groups, setGroups] = useState<Group[]>([]);
+  const [totalSeriesCount, setTotalSeriesCount] = useState<number>(0);
+  const [totalCertificatesCount, setTotalCertificatesCount] = useState<number>(0);
+  const [totalCataloguesCount, setTotalCataloguesCount] = useState<number>(0);
   const [query, setQuery] = useState('');
   const [series, setSeries] = useState('all');
   const [filterQuick, setFilterQuick] = useState<'all' | 'no-cert' | 'has-datasheet'>('all');
@@ -28,6 +128,14 @@ export function ProductList() {
 
   // Per-series column sorting state
   const [seriesSorts, setSeriesSorts] = useState<Record<string, { key: 'sku' | 'name' | 'updated'; dir: 'asc' | 'desc' }>>({});
+
+  // Per-series pagination state: Record<seriesName, currentPage>
+  const [seriesPages, setSeriesPages] = useState<Record<string, number>>({});
+
+  // Reset pagination when search query or filter changes
+  useEffect(() => {
+    setSeriesPages({});
+  }, [query, filterQuick, series]);
 
   const handleSortSeries = (seriesName: string, key: 'sku' | 'name' | 'updated') => {
     setSeriesSorts((prev) => {
@@ -77,10 +185,23 @@ export function ProductList() {
     setLoading(true);
     setError('');
     try {
-      const data = await request<Group[]>('/api/v1/product');
-      setGroups(data);
+      const [productData, seriesData, certData, catData] = await Promise.all([
+        request<Group[]>('/api/v1/product'),
+        request<any[]>('/api/v1/series').catch((e) => { console.warn('series fetch:', e); return []; }),
+        request<any[]>('/api/v1/certificate').catch((e) => { console.warn('cert fetch:', e); return []; }),
+        request<{ total?: number; data?: any[]; items?: any[] }>('/api/v1/catalogue').catch((e) => { console.warn('cat fetch:', e); return { total: 0, data: [], items: [] }; })
+      ]);
+      setGroups(productData);
+      setTotalSeriesCount(Array.isArray(seriesData) && seriesData.length > 0 ? seriesData.length : productData.length);
+      setTotalCertificatesCount(Array.isArray(certData) ? certData.length : 0);
+      setTotalCataloguesCount(
+        typeof catData?.total === 'number'
+          ? catData.total
+          : (Array.isArray(catData?.data) ? catData.data.length : (Array.isArray(catData?.items) ? catData.items.length : 0))
+      );
+
       if (selectedProduct) {
-        const found = data.flatMap((g) => g.products).find((p) => p.product_id === selectedProduct.product_id);
+        const found = productData.flatMap((g) => g.products).find((p) => p.product_id === selectedProduct.product_id);
         setSelectedProduct(found ?? null);
       }
     } catch (e) {
@@ -358,24 +479,24 @@ export function ProductList() {
           </div>
         </div>
         <div className="ac-cockpit-stat-cell">
-          <span className="ac-cockpit-stat-label">SERIES CLUSTERS</span>
+          <span className="ac-cockpit-stat-label">Series</span>
           <div className="ac-cockpit-stat-val">
-            <strong>{groups.length}</strong>
+            <strong>{totalSeriesCount || groups.length}</strong>
             <small>Categories</small>
           </div>
         </div>
         <div className="ac-cockpit-stat-cell">
-          <span className="ac-cockpit-stat-label">COMPLIANCE CERTS</span>
+          <span className="ac-cockpit-stat-label">Certificates</span>
           <div className="ac-cockpit-stat-val">
-            <strong>{totalCerts}</strong>
-            <small>Verified standards</small>
+            <strong>{totalCertificatesCount}</strong>
+            <small>Standard types</small>
           </div>
         </div>
-        <div className={`ac-cockpit-stat-cell ${uncertifiedCount > 0 ? 'is-warning' : ''}`}>
-          <span className="ac-cockpit-stat-label">UNCERTIFIED ITEMS</span>
+        <div className="ac-cockpit-stat-cell">
+          <span className="ac-cockpit-stat-label">Catalogues</span>
           <div className="ac-cockpit-stat-val">
-            <strong>{uncertifiedCount}</strong>
-            <small>{uncertifiedCount === 0 ? 'Audit clear' : 'Attention needed'}</small>
+            <strong>{totalCataloguesCount}</strong>
+            <small>Documents</small>
           </div>
         </div>
       </div>
@@ -468,9 +589,14 @@ export function ProductList() {
             </div>
           ) : (
             sortedGroups.map((group) => {
-              const groupProductIds = group.products.map((p) => p.product_id);
-              const isGroupAllSelected = groupProductIds.length > 0 && groupProductIds.every((id) => selectedIds.has(id));
-              const isGroupPartiallySelected = !isGroupAllSelected && groupProductIds.some((id) => selectedIds.has(id));
+              const totalInGroup = group.products.length;
+              const totalPages = Math.max(1, Math.ceil(totalInGroup / PAGE_SIZE));
+              const currentPage = Math.min(Math.max(1, seriesPages[group.series] || 1), totalPages);
+              const pagedProducts = group.products.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+              const pagedProductIds = pagedProducts.map((p) => p.product_id);
+              const isPageAllSelected = pagedProductIds.length > 0 && pagedProductIds.every((id) => selectedIds.has(id));
+              const isPagePartiallySelected = !isPageAllSelected && pagedProductIds.some((id) => selectedIds.has(id));
               const sort = seriesSorts[group.series];
               const sortKey = sort?.key;
               const sortDir = sort?.dir;
@@ -481,16 +607,19 @@ export function ProductList() {
                     <div className="ac-series-symbol">{initials(group.series)}</div>
                     <div>
                       <h2>{group.series}</h2>
-                      <span>{group.products.length} {group.products.length === 1 ? 'record' : 'records'}</span>
+                      <span>
+                        {totalInGroup} {totalInGroup === 1 ? 'record' : 'records'}
+                        {totalPages > 1 ? ` · Page ${currentPage} of ${totalPages}` : ''}
+                      </span>
                     </div>
                     {viewMode === 'grid' && (
                       <button
                         type="button"
                         className="ac-button ac-button-quiet"
                         style={{ marginLeft: 'auto', height: 26, fontSize: 11, padding: '0 8px' }}
-                        onClick={() => toggleSelectGroup(group.products)}
+                        onClick={() => toggleSelectGroup(pagedProducts)}
                       >
-                        {isGroupAllSelected ? 'Deselect series' : 'Select series'}
+                        {isPageAllSelected ? 'Deselect page' : 'Select page'}
                       </button>
                     )}
                   </div>
@@ -505,13 +634,13 @@ export function ProductList() {
                                 <label
                                   className="ac-checkbox-wrap"
                                   onClick={(e) => e.stopPropagation()}
-                                  title={isGroupAllSelected ? `Deselect all in ${group.series}` : `Select all in ${group.series}`}
+                                  title={isPageAllSelected ? `Deselect all on this page` : `Select all on this page`}
                                 >
                                   <input
                                     type="checkbox"
-                                    checked={isGroupAllSelected}
-                                    ref={(el) => { if (el) el.indeterminate = isGroupPartiallySelected; }}
-                                    onChange={() => toggleSelectGroup(group.products)}
+                                    checked={isPageAllSelected}
+                                    ref={(el) => { if (el) el.indeterminate = isPagePartiallySelected; }}
+                                    onChange={() => toggleSelectGroup(pagedProducts)}
                                   />
                                   <span className="ac-checkbox-custom" />
                                 </label>
@@ -568,15 +697,17 @@ export function ProductList() {
                             </tr>
                           </thead>
                         <tbody>
-                          {group.products.map((product) => {
+                          {pagedProducts.map((product) => {
                             const isChecked = selectedIds.has(product.product_id);
                             const isInspected = selectedProduct?.product_id === product.product_id;
                             return (
                               <tr
                                 key={product.product_id}
                                 className={`ac-table-row ${isChecked ? 'is-checked' : ''} ${isInspected ? 'is-selected' : ''}`}
+                                onDoubleClick={() => navigate(`/products/${product.product_id}/edit`)}
+                                title="Double-click to edit product"
                               >
-                                <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                                   <label className="ac-checkbox-wrap">
                                     <input
                                       type="checkbox"
@@ -625,7 +756,7 @@ export function ProductList() {
                                   )}
                                 </td>
                                 <td>
-                                  <div className="ac-doc-badges">
+                                  <div className="ac-doc-badges" onDoubleClick={(e) => e.stopPropagation()}>
                                     {product.datasheet_pdf ? (
                                       <button
                                         type="button"
@@ -657,7 +788,7 @@ export function ProductList() {
                                   <span className="ac-date">{dateLabel(product.update_ts)}</span>
                                   <small className="ac-audit">{product.update_by}</small>
                                 </td>
-                                <td onClick={(e) => e.stopPropagation()}>
+                                <td onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                                   <div className="ac-row-actions">
                                     <button
                                       type="button"
@@ -698,19 +829,29 @@ export function ProductList() {
                         </tbody>
                       </table>
                     </div>
+                    <SeriesPagination
+                      totalItems={totalInGroup}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      pageSize={PAGE_SIZE}
+                      onPageChange={(page) => setSeriesPages((prev) => ({ ...prev, [group.series]: page }))}
+                    />
                   </div>
                 ) : (
                   /* Modular Matrix View (Grid of Operator Cards) */
-                  <div className="ac-cockpit-grid">
-                    {group.products.map((product) => {
-                      const isChecked = selectedIds.has(product.product_id);
+                  <>
+                    <div className="ac-cockpit-grid">
+                      {pagedProducts.map((product) => {
+                        const isChecked = selectedIds.has(product.product_id);
                       const isInspected = selectedProduct?.product_id === product.product_id;
                       return (
                         <div
                           key={product.product_id}
                           className={`ac-cockpit-card ${isChecked ? 'is-checked' : ''} ${isInspected ? 'is-inspected' : ''}`}
+                          onDoubleClick={() => navigate(`/products/${product.product_id}/edit`)}
+                          title="Double-click to edit product"
                         >
-                          <div className="ac-card-cockpit-top" onClick={(e) => e.stopPropagation()}>
+                          <div className="ac-card-cockpit-top" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                             <label className="ac-checkbox-wrap">
                               <input
                                 type="checkbox"
@@ -755,7 +896,7 @@ export function ProductList() {
                             )}
                           </div>
 
-                          <div className="ac-card-cockpit-footer" onClick={(e) => e.stopPropagation()}>
+                          <div className="ac-card-cockpit-footer" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                             <div className="ac-doc-badges">
                               {product.datasheet_pdf ? (
                                 <button
@@ -822,6 +963,15 @@ export function ProductList() {
                       );
                     })}
                   </div>
+                  <SeriesPagination
+                    className="ac-series-pagination-grid"
+                    totalItems={totalInGroup}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={(page) => setSeriesPages((prev) => ({ ...prev, [group.series]: page }))}
+                  />
+                </>
                 )}
               </section>
             );

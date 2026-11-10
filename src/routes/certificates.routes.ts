@@ -17,14 +17,23 @@ export const certificateRoutes = new Elysia({ prefix: '/certificate' })
       }
       const image = await saveUpload(fileValue(b.image_file), 'images');
       set.status = 201;
-      return await saveCertificate({ certificate_code: b.certificate_code.trim(), image: image ?? b.image ?? null }, user);
+      return await saveCertificate({
+        certificate_code: b.certificate_code.trim(),
+        certificate_name: b.certificate_name?.trim() || null,
+        image: image ?? b.image ?? null
+      }, user);
     } catch (error) {
       const err = statusError(error);
       set.status = err.status;
       return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
     }
   }, {
-    body: t.Object({ certificate_code: t.String({ minLength: 1 }), image: t.Optional(t.Union([t.String(), t.Null()])), image_file: t.Optional(t.File()) }),
+    body: t.Object({
+      certificate_code: t.String({ minLength: 1 }),
+      certificate_name: t.Optional(t.Union([t.String(), t.Null()])),
+      image: t.Optional(t.Union([t.String(), t.Null()])),
+      image_file: t.Optional(t.File())
+    }),
     detail: { ...secured, tags: ['Certificates'], summary: 'Create certificate type', description: 'Accepts JSON or multipart form data; use image_file to upload an image.' }
   })
   .put('/', async ({ body, request, jwt, set }) => {
@@ -38,7 +47,12 @@ export const certificateRoutes = new Elysia({ prefix: '/certificate' })
       const old = await getCertificate(code);
       if (!old) fail(404, 'NOT_FOUND', 'Certificate type not found');
       const image = await saveUpload(fileValue(b.image_file), 'images');
-      const updated = await saveCertificate({ certificate_code: code, image: image ?? b.image ?? old.image }, user, true);
+      const certName = b.certificate_name !== undefined ? (b.certificate_name?.trim() || null) : old.certificate_name;
+      const updated = await saveCertificate({
+        certificate_code: code,
+        certificate_name: certName,
+        image: image ?? b.image ?? old.image
+      }, user, true);
       if (image && old.image && old.image !== image) await removeStoredFile(old.image);
       return updated;
     } catch (error) {
@@ -47,12 +61,16 @@ export const certificateRoutes = new Elysia({ prefix: '/certificate' })
       return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
     }
   }, {
-    body: t.Object({ certificate_code: t.String({ minLength: 1 }), image: t.Optional(t.Union([t.String(), t.Null()])), image_file: t.Optional(t.File()) }),
+    body: t.Object({
+      certificate_code: t.String({ minLength: 1 }),
+      certificate_name: t.Optional(t.Union([t.String(), t.Null()])),
+      image: t.Optional(t.Union([t.String(), t.Null()])),
+      image_file: t.Optional(t.File())
+    }),
     detail: { ...secured, tags: ['Certificates'], summary: 'Update certificate type' }
   })
-  .get('/', async ({ request, jwt, set }) => {
+  .get('/', async ({ set }) => {
     try {
-      await actor(request, jwt);
       return await listCertificates();
     } catch (error) {
       const err = statusError(error);
@@ -60,7 +78,7 @@ export const certificateRoutes = new Elysia({ prefix: '/certificate' })
       return { error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) } };
     }
   }, {
-    detail: { ...secured, tags: ['Certificates'], summary: 'List certificate types' }
+    detail: { tags: ['Certificates'], summary: 'List certificate types' }
   })
   .delete('/', async ({ body, request, jwt, set }) => {
     try {

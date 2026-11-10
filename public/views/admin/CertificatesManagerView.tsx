@@ -10,6 +10,7 @@ import { ConfirmDeleteModal } from '../../components/admin/ConfirmDeleteModal';
 export function CertificatesManager() {
   const [items, setItems] = useState<Certificate[]>([]);
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,6 +25,7 @@ export function CertificatesManager() {
   }, [success]);
 
   const [editingCert, setEditingCert] = useState<Certificate | null>(null);
+  const [editName, setEditName] = useState('');
   const [editImage, setEditImage] = useState<File | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
@@ -49,6 +51,7 @@ export function CertificatesManager() {
   const closeEditModal = useCallback(() => {
     if (modalSaving) return;
     setEditingCert(null);
+    setEditName('');
     setEditImage(null);
     setModalError('');
   }, [modalSaving]);
@@ -74,6 +77,7 @@ export function CertificatesManager() {
 
   function startEdit(item: Certificate) {
     setEditingCert(item);
+    setEditName(item.certificate_name ?? '');
     setEditImage(null);
     setModalError('');
     setError('');
@@ -87,10 +91,12 @@ export function CertificatesManager() {
     try {
       const body = new FormData();
       body.append('certificate_code', code.trim());
+      if (name.trim()) body.append('certificate_name', name.trim());
       if (image) body.append('image_file', image);
       await request('/api/v1/certificate', { method: 'POST', body });
       setSuccess('Certificate type created.');
       setCode('');
+      setName('');
       setImage(null);
       await load();
     } catch (err) {
@@ -108,6 +114,7 @@ export function CertificatesManager() {
     try {
       const body = new FormData();
       body.append('certificate_code', editingCert.certificate_code);
+      body.append('certificate_name', editName.trim());
       if (editImage) body.append('image_file', editImage);
       await request('/api/v1/certificate', { method: 'PUT', body });
       setSuccess(`Certificate “${editingCert.certificate_code}” updated.`);
@@ -161,10 +168,13 @@ export function CertificatesManager() {
               <p>Certificate code is used in product links.</p>
             </div>
           </div>
-          <Field label="Certificate code *" hint="For example CE or MS.">
-            <input className="ac-input" required value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. CE" />
+          <Field label="Certificate code *">
+            <input className="ac-input" required value={code} onChange={(e) => setCode(e.target.value)} />
           </Field>
-          <Field label="Certificate image" hint={image?.name || 'PNG, JPG, WebP or AVIF · max 12 MiB'}>
+          <Field label="Certificate name" hint="Optional full name or standard title.">
+            <input className="ac-input" value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Certificate image" hint={image?.name || 'PNG, JPG, WebP or AVIF · max 12 MB'}>
             <label className="ac-upload-drop">
               <UploadCloud size={17} />
               <span>{image?.name || 'Upload image'}</span>
@@ -204,7 +214,13 @@ export function CertificatesManager() {
                   <div className="ac-certificate-info">
                     <span className="ac-eyebrow">CERTIFICATE CODE</span>
                     <h3>{item.certificate_code}</h3>
-                    <small>Updated {dateLabel(item.update_ts)} · {item.update_by}</small>
+                    {item.certificate_name ? (
+                      <div className="ac-certificate-name" style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginTop: 2, marginBottom: 4 }}>
+                        {item.certificate_name}
+                      </div>
+                    ) : null}
+                    <small>Updated {dateLabel(item.update_ts)}</small>
+                    <small className="ac-audit">{item.update_by}</small>
                     <div className="ac-row-actions">
                       <button className="ac-icon-button" title="Edit certificate" onClick={() => startEdit(item)}><Pencil size={15} /></button>
                       <button className="ac-icon-button danger" title="Delete certificate" onClick={() => { setDeletingCert(item); setDeleteError(''); }}><Trash2 size={15} /></button>
@@ -243,7 +259,10 @@ export function CertificatesManager() {
                 <Field label="Certificate code" hint="Certificate code is the primary key and cannot be changed.">
                   <input className="ac-input" disabled value={editingCert.certificate_code} />
                 </Field>
-                <Field label="Certificate image" hint={editImage?.name || (editingCert.image ? 'Existing image on server' : 'PNG, JPG, WebP or AVIF · max 12 MiB')}>
+                <Field label="Certificate name" hint="Full name or standard title.">
+                  <input className="ac-input" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                </Field>
+                <Field label="Certificate image" hint={editImage?.name || (editingCert.image ? 'Existing image on server' : 'PNG, JPG, WebP or AVIF · max 12 MB')}>
                   {editingCert.image && !editImage && (
                     <div className="ac-edit-modal-cert-current">
                       <button

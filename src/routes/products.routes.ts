@@ -23,6 +23,8 @@ const productFields = {
   certificate_pdf: t.Optional(t.Union([t.String(), t.Null()])),
   other: t.Optional(jsonField),
   certificate_codes: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+  version: t.Optional(t.Union([t.Numeric(), t.String(), t.Null()])),
+  expected_version: t.Optional(t.Union([t.Numeric(), t.String(), t.Null()])),
   main_image_file: t.Optional(t.File()),
   main_image_files: t.Optional(t.Files()),
   other_image_files: t.Optional(t.Files()),
@@ -57,8 +59,24 @@ export const productRoutes = new Elysia({ prefix: '/product' })
       const id = uuid(String(raw.product_id ?? ''));
       const old = await getProduct(id);
       if (!old) fail(404, 'NOT_FOUND', 'Product not found');
+
+      const rawExpected = raw.expected_version ?? raw.version;
+      const expectedVersion = rawExpected !== undefined && rawExpected !== null && rawExpected !== ''
+        ? Number(rawExpected)
+        : undefined;
+
+      if (expectedVersion !== undefined && !isNaN(expectedVersion) && old.version !== undefined && old.version !== expectedVersion) {
+        fail(409, 'CONFLICT', 'Product was modified by another user. Please refresh and try again.', {
+          field: 'version',
+          expected_version: expectedVersion,
+          current_version: old.version,
+          updated_by: old.update_by,
+          updated_at: old.update_ts
+        });
+      }
+
       const input = await prepareProductWrite(raw, old);
-      const next = await saveProduct(input, user, id);
+      const next = await saveProduct(input, user, id, expectedVersion);
       const inputMain = Array.isArray(input.main_image) ? input.main_image : (input.main_image ? [input.main_image] : []);
       const inputOther = Array.isArray(input.other_image) ? input.other_image : (input.other_image ? [input.other_image] : []);
       const keep = new Set([...inputMain, input.datasheet_pdf, input.certificate_pdf, ...inputOther]);
