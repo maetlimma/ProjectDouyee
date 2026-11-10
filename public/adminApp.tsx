@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { Award, Box, LogOut, ShieldCheck, Layers3, BookOpen, PanelLeftClose, PanelLeft, Users, ChevronDown, Shield } from 'lucide-react';
+import { Award, Box, LogOut, ShieldCheck, Layers3, BookOpen, PanelLeftClose, PanelLeft, Users, ChevronDown, Shield, GalleryHorizontal } from 'lucide-react';
 import { I18nProvider } from './i18n';
 import LoginView from './views/LoginView';
-import { AdminUsersManager, CataloguesManager, CertificatesManager, ProductEditor, ProductList, SeriesManager } from './views/admin';
+import { AdminUsersManager, CataloguesManager, CertificatesManager, HomeSliderManager, ProductEditor, ProductList, SeriesManager } from './views/admin';
 
 function AdminShell() {
   const location = useLocation();
@@ -195,6 +195,14 @@ function AdminShell() {
             <BookOpen size={17} />
             <span>Catalogues</span>
           </NavLink>
+          <NavLink
+            to="/home-slider"
+            title="Home Slider"
+            className={({ isActive }) => `ac-nav-link ${isActive ? 'active' : ''}`}
+          >
+            <GalleryHorizontal size={17} />
+            <span>Home Slider</span>
+          </NavLink>
         </aside>
       )}
 
@@ -208,6 +216,7 @@ function AdminShell() {
           <Route path="/series" element={token ? <SeriesManager /> : <Navigate to="/login" replace />} />
           <Route path="/certificates" element={token ? <CertificatesManager /> : <Navigate to="/login" replace />} />
           <Route path="/catalogues" element={token ? <CataloguesManager /> : <Navigate to="/login" replace />} />
+          <Route path="/home-slider" element={token ? <HomeSliderManager /> : <Navigate to="/login" replace />} />
           <Route path="/users" element={token ? <AdminUsersManager /> : <Navigate to="/login" replace />} />
           <Route path="/admins" element={<Navigate to="/users" replace />} />
           <Route path="*" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />

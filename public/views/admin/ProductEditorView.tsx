@@ -13,6 +13,14 @@ import { FileField } from '../../components/admin/FileField';
 import { AuthImage } from '../../components/admin/AuthImage';
 import { DocPreviewModal } from '../../components/admin/DocPreviewModal';
 
+// Certificate box text is stored as product.other.conformity = { th: string[], en: string[] }
+function conformityText(other: Record<string, unknown> | undefined, lang: 'th' | 'en') {
+  const lines = (other?.conformity as Record<string, unknown> | undefined)?.[lang];
+  return Array.isArray(lines) ? lines.filter((l) => typeof l === 'string').join('\n') : '';
+}
+
+const conformityLines = (text: string) => text.split('\n').map((l) => l.trim()).filter(Boolean);
+
 function FileImageThumb({ file, alt }: { file: File; alt: string }) {
   const [url, setUrl] = useState<string>('');
   useEffect(() => {
@@ -55,7 +63,7 @@ export function ProductEditor() {
     updated_by?: string;
     updated_at?: string;
   } | null>(null);
-  const [form, setForm] = useState({ sku: '', product_name: '', series: '', brand: '', title: '', specification: {} as Record<string, string>, specification_en: {} as Record<string, string>, size_weights: {} as Record<string, string>, certificate_codes: [] as string[] });
+  const [form, setForm] = useState({ sku: '', product_name: '', series: '', brand: '', title: '', specification: {} as Record<string, string>, specification_en: {} as Record<string, string>, size_weights: {} as Record<string, string>, certificate_codes: [] as string[], conformity_th: '', conformity_en: '' });
   const [mainImagePaths, setMainImagePaths] = useState<string[]>([]);
   const [mainImages, setMainImages] = useState<File[]>([]);
   const [otherImagePaths, setOtherImagePaths] = useState<string[]>([]);
@@ -230,7 +238,9 @@ export function ProductEditor() {
         ])
       ),
       size_weights: Object.fromEntries(Object.entries(current.size_weights ?? {}).map(([key, value]) => [key, String(value ?? '')])),
-      certificate_codes: current.certificate_codes ?? []
+      certificate_codes: current.certificate_codes ?? [],
+      conformity_th: conformityText(current.other, 'th'),
+      conformity_en: conformityText(current.other, 'en')
     });
     const mImages = Array.isArray(current.main_image)
       ? current.main_image
@@ -294,7 +304,7 @@ export function ProductEditor() {
       const body = new FormData();
       body.append('sku', form.sku.trim()); body.append('product_name', form.product_name.trim()); body.append('series', form.series);
       body.append('brand', form.brand.trim()); body.append('title', form.title.trim());
-      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_th }) => [key_th, form.specification[key_th] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_en }) => [key_en, form.specification_en[key_en] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify(product?.other ?? {}));
+      body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_th }) => [key_th, form.specification[key_th] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_en }) => [key_en, form.specification_en[key_en] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify({ ...(product?.other ?? {}), conformity: { th: conformityLines(form.conformity_th), en: conformityLines(form.conformity_en) } }));
       body.append('certificate_codes', JSON.stringify(form.certificate_codes));
       body.append('main_image', JSON.stringify(mainImagePaths));
       body.append('other_image', JSON.stringify(otherImagePaths));
@@ -499,6 +509,14 @@ export function ProductEditor() {
             <AuthImage path={certificate.image} alt="" className="ac-cert-thumb" />
             <span><strong>{certificate.certificate_code}</strong><small>{certificate.certificate_name}</small></span>
           </label>)}</div> : <div className="ac-inline-empty">No certificate types yet. <Link to="/certificates">Add a certificate type</Link></div>}
+          <div className="ac-conformity">
+            <Field label="Certificate details / มาตรฐานและการรับรอง (TH)" hint="One item per line; shown as a numbered list in the product popup">
+              <textarea className="ac-input ac-conformity-input" rows={4} value={form.conformity_th} onChange={(e) => update('conformity_th', e.target.value)} />
+            </Field>
+            <Field label="Certificate details (EN)" hint="Used when the TH box is empty, and for English visitors">
+              <textarea className="ac-input ac-conformity-input" rows={4} value={form.conformity_en} onChange={(e) => update('conformity_en', e.target.value)} />
+            </Field>
+          </div>
         </section>
       </div>
       <aside className="ac-editor-side">
@@ -664,7 +682,7 @@ export function ProductEditor() {
             </label>
           </Field>
         </section>
-        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon red"><FileText size={17} /></div><div><h2>Documents</h2><p>PDF files · max 30 MB</p></div></div>
+        <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon red"><FileText size={17} /></div><div><h2>Documents</h2><p>PDF files · max 60 MB</p></div></div>
           <FileField
             label="Datasheet PDF"
             current={datasheetPath}
