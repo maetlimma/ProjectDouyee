@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { deleteProduct, getProduct, listProductsGrouped, prepareProductWrite, saveProduct } from '../services/products';
 import { fileResponse, readStoredFile, removeStoredFile } from '../services/files';
+import { isReferencedByProduct } from '../services/catalog';
 import { actor, secured, uuid } from '../middlewares/auth';
 import { fail, statusError } from '../middlewares/errors';
 import { jwtSecret } from '../config';
@@ -83,7 +84,7 @@ export const productRoutes = new Elysia({ prefix: '/product' })
       const oldMain = Array.isArray(old.main_image) ? old.main_image : (old.main_image ? [old.main_image] : []);
       const oldOther = Array.isArray(old.other_image) ? old.other_image : (old.other_image ? [old.other_image] : []);
       for (const path of [...oldMain, old.datasheet_pdf, old.certificate_pdf, ...oldOther]) {
-        if (path && !keep.has(path)) await removeStoredFile(String(path));
+        if (path && !keep.has(path) && !(await isReferencedByProduct(String(path)))) await removeStoredFile(String(path));
       }
       return next;
     } catch (error) {
@@ -131,7 +132,7 @@ export const productRoutes = new Elysia({ prefix: '/product' })
       const oldMain = Array.isArray(old.main_image) ? old.main_image : (old.main_image ? [old.main_image] : []);
       const oldOther = Array.isArray(old.other_image) ? old.other_image : (old.other_image ? [old.other_image] : []);
       for (const path of [...oldMain, old.datasheet_pdf, old.certificate_pdf, ...oldOther]) {
-        await removeStoredFile(path);
+        if (path && !(await isReferencedByProduct(String(path)))) await removeStoredFile(path);
       }
       set.status = 204;
       return;

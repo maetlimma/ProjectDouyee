@@ -11,3 +11,9 @@ const dockerExit = await docker.exited;
 if (dockerExit !== 0) process.exit(dockerExit);
 
 await migrate('up');
+
+const { seedProducts } = await import('./seed-products');
+const { pool } = await import('../src/db/pool');
+const seeded = await seedProducts();
+console.info(`Product seed: ${seeded.inserted} inserted, ${seeded.refreshed} refreshed, ${seeded.copied} files restored`);
+await pool.end();

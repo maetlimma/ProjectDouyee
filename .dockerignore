@@ -7,3 +7,5 @@ storage
 database
 *.log
 reference
+
+.tmp

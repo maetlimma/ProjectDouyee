@@ -1,0 +1,1223 @@
+{
+  "products": [
+    {
+      "sku": "HS-452-BLACK-PU-SB SRC-SK",
+      "product_name": "HS-452-BLACK-PU-SB SRC-SK",
+      "series": "Basic Series",
+      "brand": "EUROSTAT",
+      "title": "Safety Shoes, Black",
+      "specification": {},
+      "specification_en": {
+        "Upper": "Fly-Knitting Acrylic and Cow Suede Leather",
+        "Toe cap": "Steel",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-452-black-pu-sb-src-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-452-black-pu-sb-src-sk-part-1.jpg",
+        "/files/images/hs-452-black-pu-sb-src-sk-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-452-black-pu-sb-src-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-4b0c386ac2cc.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-452",
+        "variant": null,
+        "spec": [
+          "PU, SB SRC",
+          "Steel"
+        ],
+        "sort": 1,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed above meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for immediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the technical documentation (Category: SB SRC)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-693-6IN-BROWN-EH-PU/NBR-EUROSTAT-SB",
+      "product_name": "HS-693-6IN-BROWN-EH-PU/NBR-EUROSTAT-SB",
+      "series": "Basic Series",
+      "brand": "EUROSTAT",
+      "title": "Electrical Hazard Safety Shoes, Brown",
+      "specification": {},
+      "specification_en": {
+        "Upper": "Brown Cow Crazy Horse Leather",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Color": "Brown"
+      },
+      "main_image": [
+        "/files/images/hs-693-6in-brown-eh-pu-nbr-eurostat-sb-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-693-6in-brown-eh-pu-nbr-eurostat-sb-part-1.jpg",
+        "/files/images/hs-693-6in-brown-eh-pu-nbr-eurostat-sb-part-2.jpg",
+        "/files/images/hs-693-6in-brown-eh-pu-nbr-eurostat-sb-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-693-6in-brown-eh-pu-nbr-eurostat-sb-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cab4876a0806.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-693",
+        "variant": "6IN",
+        "spec": [
+          "PU/NBR, SBPL SR WR HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022",
+          "ASTM F2413-18 I/C EH"
+        ],
+        "sort": 2,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2022 and examination of the Technical File Documentation (Category: SBPL SR E WRA WR FO HRO)",
+            "ASTM F2413-18 I/C EH",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-693-8IN-BROWN-EH-PU/NBR-EUROSTAT-SB",
+      "product_name": "HS-693-8IN-BROWN-EH-PU/NBR-EUROSTAT-SB",
+      "series": "Basic Series",
+      "brand": "EUROSTAT",
+      "title": "Electrical Hazard Safety Shoes, Brown",
+      "specification": {},
+      "specification_en": {
+        "Upper": "Brown Cow Crazy Horse Leather",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Color": "Brown"
+      },
+      "main_image": [
+        "/files/images/hs-693-8in-brown-eh-pu-nbr-eurostat-sb-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-693-8in-brown-eh-pu-nbr-eurostat-sb-part-1.jpg",
+        "/files/images/hs-693-8in-brown-eh-pu-nbr-eurostat-sb-part-2.jpg",
+        "/files/images/hs-693-8in-brown-eh-pu-nbr-eurostat-sb-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-693-8in-brown-eh-pu-nbr-eurostat-sb-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cab4876a0806.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-693",
+        "variant": "8IN",
+        "spec": [
+          "PU/NBR, SBPL SR WR HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022",
+          "ASTM F2413-18 I/C EH"
+        ],
+        "sort": 3,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2022 and examination of the Technical File Documentation (Category: SBPL SR E WRA WR FO HRO)",
+            "ASTM F2413-18 I/C EH",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-618C-1G-PU/PU-S2SRFO-SK",
+      "product_name": "HS-618C-1G-PU/PU-S2SRFO-SK",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "3D-mesh Polyester + TPU Heat Seal",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-618c-1g-pu-pu-s2srfo-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-618c-1g-pu-pu-s2srfo-sk-part-1.jpg",
+        "/files/images/hs-618c-1g-pu-pu-s2srfo-sk-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-618c-1g-pu-pu-s2srfo-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cc6642ce71dc.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS618C S2",
+        "variant": null,
+        "spec": [
+          "PU/PU, S2SRFO",
+          "Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 4,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345: 2022 and examination of the Technical File Documentation (Category: S2SRFO)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-1102E-1G-EVA/RUBBER-S3LSRFOHRO-SK",
+      "product_name": "HS-1102E-1G-EVA/RUBBER-S3LSRFOHRO-SK",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Spilt Barton Leather",
+        "Toe cap": "Steel",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-1102e-1g-eva-rubber-s3lsrfohro-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-1102e-1g-eva-rubber-s3lsrfohro-sk-part-1.jpg",
+        "/files/images/hs-1102e-1g-eva-rubber-s3lsrfohro-sk-part-2.jpg",
+        "/files/images/hs-1102e-1g-eva-rubber-s3lsrfohro-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-1102e-1g-eva-rubber-s3lsrfohro-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-9b5dc0874233.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-1102E S3",
+        "variant": null,
+        "spec": [
+          "EVA/NBR, S3LSRFOHRO",
+          "Steel / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 5,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2022 and examination of the Technical File Documentation (Category: S3PLSRFOHRO)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-1102-1G-PU/PU-S3 SRC",
+      "product_name": "HS-1102-1G-PU/PU-S3 SRC",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Spilt Barton Leather",
+        "Toe cap": "Steel",
+        "Midplate": "Steel",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-1102-1g-pu-pu-s3-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-1102-1g-pu-pu-s3-src-part-1.jpg",
+        "/files/images/hs-1102-1g-pu-pu-s3-src-part-2.jpg",
+        "/files/images/hs-1102-1g-pu-pu-s3-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-1102-1g-pu-pu-s3-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-18dbbbe92893.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-1102 S3",
+        "variant": null,
+        "spec": [
+          "PU/PU, S3 SRC",
+          "Steel / Steel"
+        ],
+        "sort": 6,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S3 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-1102-PU/PU-SB SRC",
+      "product_name": "HS-1102-PU/PU-SB SRC",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Safety Shoes, Black",
+      "specification": {},
+      "specification_en": {
+        "Upper": "Black Spilt Barton Leather",
+        "Toe cap": "Steel",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-1102-pu-pu-sb-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-1102-pu-pu-sb-src-part-1.jpg",
+        "/files/images/hs-1102-pu-pu-sb-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-1102-pu-pu-sb-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-84a75ffb3194.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-1102 SB",
+        "variant": null,
+        "spec": [
+          "PU/PU, SB SRC",
+          "Steel"
+        ],
+        "sort": 7,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: SB SRC)",
+            "SNI 7079-2009 (NPB 104-116-170603)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "SK-001-1G-PU-S1P SRC",
+      "product_name": "SK-001-1G-PU-S1P SRC",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Spilt Barton Leather",
+        "Toe cap": "Steel",
+        "Midplate": "Steel",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/sk-001-1g-pu-s1p-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/sk-001-1g-pu-s1p-src-part-1.jpg",
+        "/files/images/sk-001-1g-pu-s1p-src-part-2.jpg",
+        "/files/images/sk-001-1g-pu-s1p-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/sk-001-1g-pu-s1p-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-b860681b22e9.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "SK-001",
+        "variant": null,
+        "spec": [
+          "PU, S1P SRC",
+          "Steel / Steel",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 8,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1P SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-003-1G-PU/PU-S3 SRC",
+      "product_name": "HS-003-1G-PU/PU-S3 SRC",
+      "series": "e9 Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Mid-cut, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Spilt Barton Leather",
+        "Toe cap": "Steel",
+        "Midplate": "Steel",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-003-1g-pu-pu-s3-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-003-1g-pu-pu-s3-src-part-1.jpg",
+        "/files/images/hs-003-1g-pu-pu-s3-src-part-2.jpg",
+        "/files/images/hs-003-1g-pu-pu-s3-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-003-1g-pu-pu-s3-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-18dbbbe92893.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-003",
+        "variant": null,
+        "spec": [
+          "PU/PU, S3 SRC",
+          "Steel / Steel"
+        ],
+        "sort": 9,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S3 SRC)",
+            "SNI 7079-2009 (NPB 104-116-170603)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-635C-35M-PU/PU-S1PLSRFO-SK",
+      "product_name": "HS-635C-35M-PU/PU-S1PLSRFO-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black & Grey",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Fly-Knitting Polyester + TPU Heat Seal",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black & Grey"
+      },
+      "main_image": [
+        "/files/images/hs-635c-35m-pu-pu-s1plsrfo-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-635c-35m-pu-pu-s1plsrfo-sk-part-1.jpg",
+        "/files/images/hs-635c-35m-pu-pu-s1plsrfo-sk-part-2.jpg",
+        "/files/images/hs-635c-35m-pu-pu-s1plsrfo-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-635c-35m-pu-pu-s1plsrfo-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-234df0f122ab.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS635C",
+        "variant": null,
+        "spec": [
+          "PU/PU, S1PLSRFO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 10,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345: 2022 and examination of the Technical File Documentation (Category: S1PLSRFOSC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "SH-09P-SD-35MOHMS-MW",
+      "product_name": "SH-09P-SD-35MOHMS-MW",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, White",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Microfiber PU synthetic leather",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "White"
+      },
+      "main_image": [
+        "/files/images/sh-09p-sd-35mohms-mw-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/sh-09p-sd-35mohms-mw-part-1.jpg",
+        "/files/images/sh-09p-sd-35mohms-mw-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/sh-09p-sd-35mohms-mw-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-6ba9a1c08c2f.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "SH-09P-MW",
+        "variant": null,
+        "spec": [
+          "PU, S1 SRC",
+          "Steel"
+        ],
+        "sort": 11,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SNI 7079-2009 (NPB 104-116-170603)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "SH-13P-SD-35MOHMS-BK",
+      "product_name": "SH-13P-SD-35MOHMS-BK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Split Buffalo Barton Printed Leather",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/sh-13p-sd-35mohms-bk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/sh-13p-sd-35mohms-bk-part-1.jpg",
+        "/files/images/sh-13p-sd-35mohms-bk-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/sh-13p-sd-35mohms-bk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-6ba9a1c08c2f.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "SH-13P-BK",
+        "variant": null,
+        "spec": [
+          "PU, S1 SRC",
+          "Steel"
+        ],
+        "sort": 12,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SNI 7079-2009 (NPB 104-116-170603)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-354C-BLACK-35M-PU/PU-S1 SRC",
+      "product_name": "HS-354C-BLACK-35M-PU/PU-S1 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Sneaker, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Microfiber PU Synthetic Leather",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-354c-black-35m-pu-pu-s1-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-354c-black-35m-pu-pu-s1-src-part-1.jpg",
+        "/files/images/hs-354c-black-35m-pu-pu-s1-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-354c-black-35m-pu-pu-s1-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cdea60f2f05d.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-354C",
+        "variant": "BLACK",
+        "spec": [
+          "PU/PU, S1 SRC",
+          "Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 13,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-354C-NAVY BLUE-35M-PU/PU-S1 SRC",
+      "product_name": "HS-354C-NAVY BLUE-35M-PU/PU-S1 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Sneaker, Navy Blue",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Navy Blue Microfiber PU",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Navy Blue"
+      },
+      "main_image": [
+        "/files/images/hs-354c-navy-blue-35m-pu-pu-s1-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-354c-navy-blue-35m-pu-pu-s1-src-part-1.jpg",
+        "/files/images/hs-354c-navy-blue-35m-pu-pu-s1-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-354c-navy-blue-35m-pu-pu-s1-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cdea60f2f05d.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-354C",
+        "variant": "NAVY BLUE",
+        "spec": [
+          "PU/PU, S1 SRC",
+          "Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 14,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-354C-WHITE-35M-PU/PU-S1 SRC",
+      "product_name": "HS-354C-WHITE-35M-PU/PU-S1 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Sneaker, White",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "White Microfiber PU Synthetic Leather",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "White"
+      },
+      "main_image": [
+        "/files/images/hs-354c-white-35m-pu-pu-s1-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-354c-white-35m-pu-pu-s1-src-part-1.jpg",
+        "/files/images/hs-354c-white-35m-pu-pu-s1-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-354c-white-35m-pu-pu-s1-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-cdea60f2f05d.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-354C",
+        "variant": "WHITE",
+        "spec": [
+          "PU/PU, S1 SRC",
+          "Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 15,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-015-35M-PU/PU-S3 SRC",
+      "product_name": "HS-015-35M-PU/PU-S3 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Buffalo Split Barton Print Leather",
+        "Midplate": "Composite Midplate (Non-Metallic)",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-015-35m-pu-pu-s3-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-015-35m-pu-pu-s3-src-part-1.jpg",
+        "/files/images/hs-015-35m-pu-pu-s3-src-part-2.jpg",
+        "/files/images/hs-015-35m-pu-pu-s3-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-015-35m-pu-pu-s3-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-c1181b757e5c.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-015",
+        "variant": null,
+        "spec": [
+          "PU/PU, S3 SRC",
+          "Composite / Composite"
+        ],
+        "sort": 16,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed above meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for immediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the technical documentation (Category: S3 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-354C-NAVY BLUE-35M-RUBBER-S1 SRC",
+      "product_name": "HS-354C-NAVY BLUE-35M-RUBBER-S1 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Sneaker, Navy Blue",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Microfiber PU",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Navy Blue"
+      },
+      "main_image": [
+        "/files/images/hs-354c-navy-blue-35m-rubber-s1-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-354c-navy-blue-35m-rubber-s1-src-part-1.jpg",
+        "/files/images/hs-354c-navy-blue-35m-rubber-s1-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-354c-navy-blue-35m-rubber-s1-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-24e4ee0a6413.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-354C-NBR",
+        "variant": "NAVY BLUE",
+        "spec": [
+          "NBR, S1 SRC",
+          "Composite"
+        ],
+        "sort": 17,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-354C-WHITE-35M-RUBBER-S1 SRC",
+      "product_name": "HS-354C-WHITE-35M-RUBBER-S1 SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Sneaker, White",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Microfiber PU",
+        "Toe cap": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "White"
+      },
+      "main_image": [
+        "/files/images/hs-354c-white-35m-rubber-s1-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-354c-white-35m-rubber-s1-src-part-1.jpg",
+        "/files/images/hs-354c-white-35m-rubber-s1-src-part-2.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-354c-white-35m-rubber-s1-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-24e4ee0a6413.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-354C-NBR",
+        "variant": "WHITE",
+        "spec": [
+          "NBR, S1 SRC",
+          "Composite"
+        ],
+        "sort": 18,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1 SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-431C-GREY-35M-EVA/RUBBER-S1P SRC-SK",
+      "product_name": "HS-431C-GREY-35M-EVA/RUBBER-S1P SRC-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Grey",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Fly-Knitting Polyester & TPU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Grey"
+      },
+      "main_image": [
+        "/files/images/hs-431c-grey-35m-eva-rubber-s1p-src-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-431c-grey-35m-eva-rubber-s1p-src-sk-part-1.jpg",
+        "/files/images/hs-431c-grey-35m-eva-rubber-s1p-src-sk-part-2.jpg",
+        "/files/images/hs-431c-grey-35m-eva-rubber-s1p-src-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-431c-grey-35m-eva-rubber-s1p-src-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-a6b4cfce78e0.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS431C",
+        "variant": "GREY",
+        "spec": [
+          "EVA/NBR, S1P SRC HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 19,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2022 and examination of the Technical File Documentation (Category: S1PL SR FO HRO SC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-431C-BLUE-35M-EVA/RUBBER-S1P SRC-SK",
+      "product_name": "HS-431C-BLUE-35M-EVA/RUBBER-S1P SRC-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Blue",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Fly-Knitting Polyester & Sprayed Rubber",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Blue"
+      },
+      "main_image": [
+        "/files/images/hs-431c-blue-35m-eva-rubber-s1p-src-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-431c-blue-35m-eva-rubber-s1p-src-sk-part-1.jpg",
+        "/files/images/hs-431c-blue-35m-eva-rubber-s1p-src-sk-part-2.jpg",
+        "/files/images/hs-431c-blue-35m-eva-rubber-s1p-src-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-431c-blue-35m-eva-rubber-s1p-src-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-a6b4cfce78e0.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS431C",
+        "variant": "BLUE",
+        "spec": [
+          "EVA/NBR, S1P SRC HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 20,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2022 and examination of the Technical File Documentation (Category: S1PL SR FO HRO SC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)",
+            "CNS 20345: 2015 (R3B081)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-778C-35M-EVA/NBR-S1PLSRFOHRO-SK",
+      "product_name": "HS-778C-35M-EVA/NBR-S1PLSRFOHRO-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Action Nubuck, Action Embossed Leather,",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black/Grey"
+      },
+      "main_image": [
+        "/files/images/hs-778c-35m-eva-nbr-s1plsrfohro-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-778c-35m-eva-nbr-s1plsrfohro-sk-part-1.jpg",
+        "/files/images/hs-778c-35m-eva-nbr-s1plsrfohro-sk-part-2.jpg",
+        "/files/images/hs-778c-35m-eva-nbr-s1plsrfohro-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-778c-35m-eva-nbr-s1plsrfohro-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-e5769a88f81b.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS778C",
+        "variant": null,
+        "spec": [
+          "EVA/NBR, S1PLSRFOHRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 21,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1P SRC HRO)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-611CC-WHITE-35M-PU/NBR-S1P SRC",
+      "product_name": "HS-611CC-WHITE-35M-PU/NBR-S1P SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Ultra Slip Resistant",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Microfiber PU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "White"
+      },
+      "main_image": [
+        "/files/images/hs-611cc-white-35m-pu-nbr-s1p-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-611cc-white-35m-pu-nbr-s1p-src-part-1.jpg",
+        "/files/images/hs-611cc-white-35m-pu-nbr-s1p-src-part-2.jpg",
+        "/files/images/hs-611cc-white-35m-pu-nbr-s1p-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-611cc-white-35m-pu-nbr-s1p-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-f0c0fe370c80.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS611CC",
+        "variant": "WHITE",
+        "spec": [
+          "PU/NBR, S1PLSRFOHRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 22,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1P SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-611CC-BLACK-35M-PU/NBR-S1P SRC",
+      "product_name": "HS-611CC-BLACK-35M-PU/NBR-S1P SRC",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Ultra Slip Resistant",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Microfiber PU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-611cc-black-35m-pu-nbr-s1p-src-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-611cc-black-35m-pu-nbr-s1p-src-part-1.jpg",
+        "/files/images/hs-611cc-black-35m-pu-nbr-s1p-src-part-2.jpg",
+        "/files/images/hs-611cc-black-35m-pu-nbr-s1p-src-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-611cc-black-35m-pu-nbr-s1p-src-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-f0c0fe370c80.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS611CC",
+        "variant": "BLACK",
+        "spec": [
+          "PU/NBR, S1PLSRFOHRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 23,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article 10 of the PPE Directive (89/686/EEC) including amendments and corrigendum up to 14/12/2010 for intermediate design category products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S1P SRC)",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-690-35M-PU/PU-S1PSSRFOLG-SK",
+      "product_name": "HS-690-35M-PU/PU-S1PSSRFOLG-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Sandwich Mesh & Black Microfiber PU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-690-35m-pu-pu-s1pssrfolg-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-690-35m-pu-pu-s1pssrfolg-sk-part-1.jpg",
+        "/files/images/hs-690-35m-pu-pu-s1pssrfolg-sk-part-2.jpg",
+        "/files/images/hs-690-35m-pu-pu-s1pssrfolg-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-690-35m-pu-pu-s1pssrfolg-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-ca5373d41f1f.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-690",
+        "variant": null,
+        "spec": [
+          "PU/PU, S1PSSRFOLG",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 24,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein complies with the applicable essential health and safety requirements of Regulation (EU) 2016/425 and standard(s) mentioned below: EN ISO 20345:2022 + A1:2024 (Personal protective equipment – Safety Footwear), Class I footwear, with a performance category of S1, with additional applications: FO, LG, PS & SR.",
+            "SIRIM MS ISO 20345: 2008 (License No.: PC004375)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-138C-BLACK-1G-EVA/RUBBER-S3 SRC-SK",
+      "product_name": "HS-138C-BLACK-1G-EVA/RUBBER-S3 SRC-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Black Top Grain Leather and TPU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-138c-black-1g-eva-rubber-s3-src-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-138c-black-1g-eva-rubber-s3-src-sk-part-1.jpg",
+        "/files/images/hs-138c-black-1g-eva-rubber-s3-src-sk-part-2.jpg",
+        "/files/images/hs-138c-black-1g-eva-rubber-s3-src-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-138c-black-1g-eva-rubber-s3-src-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-04f4b4817d62.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-138C",
+        "variant": null,
+        "spec": [
+          "EVA/NBR, S3 SRC HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 25,
+        "conformity": {
+          "en": [
+            "Product complies with the applicable essential health and safety requirements of Regulation (EU) 2016/425 and standard(s) mentioned below: EN ISO 20345:2022 + A1:2024 (Personal protective equipment – Safety Footwear), Class I footwear, with a performance category of S3L, with additional applications: FO, HRO & SR."
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "HS-433C-BLACK-1G-EVA/RUBBER-S3 SRC-SK",
+      "product_name": "HS-433C-BLACK-1G-EVA/RUBBER-S3 SRC-SK",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "Static Dissipative Safety Shoes, Black",
+      "specification": {
+        "ความต้านทานไฟฟ้าสถิต": "< 1.0 × 10⁹ ohms"
+      },
+      "specification_en": {
+        "Upper": "Top Grain Leather & TPU",
+        "Toe cap": "Composite",
+        "Midplate": "Composite",
+        "Footwear only Resistance": "< 1.0 × 10⁹ ohms",
+        "Color": "Black"
+      },
+      "main_image": [
+        "/files/images/hs-433c-black-1g-eva-rubber-s3-src-sk-main.jpg"
+      ],
+      "other_image": [
+        "/files/images/hs-433c-black-1g-eva-rubber-s3-src-sk-part-1.jpg",
+        "/files/images/hs-433c-black-1g-eva-rubber-s3-src-sk-part-2.jpg",
+        "/files/images/hs-433c-black-1g-eva-rubber-s3-src-sk-part-3.jpg"
+      ],
+      "datasheet_pdf": "/files/documents/hs-433c-black-1g-eva-rubber-s3-src-sk-datasheet.pdf",
+      "certificate_pdf": "/files/documents/certificate-04f4b4817d62.pdf",
+      "certificate_codes": [
+        "CE"
+      ],
+      "other": {
+        "model": "HS-433C",
+        "variant": null,
+        "spec": [
+          "EVA/NBR, S3 SRC HRO",
+          "Composite / Composite",
+          "EN ISO 20345:2022"
+        ],
+        "sort": 26,
+        "conformity": {
+          "en": [
+            "The safety footwear detailed herein meets the criteria of an EC Type Examination in accordance with Article Annex V, including the application clauses of the Essential Health and Safety Requirements of the PPE Regulation EU 2016/425 for Category II products. This has been shown through satisfactory testing to EN ISO 20345:2011 and examination of the Technical File Documentation (Category: S3 SRC HRO)"
+          ],
+          "th": []
+        }
+      }
+    },
+    {
+      "sku": "EUROSTAT PU INSOLE",
+      "product_name": "EUROSTAT PU INSOLE",
+      "series": "ESD Series",
+      "brand": "EUROSTAT",
+      "title": "EUROSTAT® Static Dissipative PU Insole",
+      "specification": {},
+      "specification_en": {},
+      "main_image": [
+        "/files/images/eurostat-pu-insole-main.jpg"
+      ],
+      "other_image": [],
+      "datasheet_pdf": "/files/documents/eurostat-pu-insole-datasheet.pdf",
+      "certificate_pdf": null,
+      "certificate_codes": [],
+      "other": {
+        "model": "EUROSTAT PU INSOLE",
+        "variant": null,
+        "spec": [
+          "Static Dissipative PU Insole"
+        ],
+        "sort": 27,
+        "conformity": {
+          "en": [],
+          "th": []
+        }
+      }
+    }
+  ]
+}

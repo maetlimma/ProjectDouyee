@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { app } from '../src/index';
 import { pool } from '../src/db/pool';
+import { seedProducts } from '../scripts/seed-products';
 
 const email = process.env.TEST_ADMIN_EMAIL ?? 'admin@douyee.com';
 const password = process.env.TEST_ADMIN_PASSWORD;
@@ -40,6 +41,58 @@ describe('API integration', () => {
     expect(response.headers.get('content-type')).toContain('image/jpeg');
   });
 
+  it('seeds the Product_List products once and serves them on the public catalogue', async () => {
+    await seedProducts();
+    const again = await seedProducts();
+    expect(again.inserted).toBe(0);
+
+    let response = await api('/api/taxonomy');
+    expect(response.status).toBe(200);
+    expect((await response.json()).slice(0, 3).map((s: any) => s.id)).toEqual(['ESD Series', 'e9 Series', 'Basic Series']);
+
+    response = await api('/api/products');
+    expect(response.status).toBe(200);
+    const products = await response.json();
+    const sneaker = products.find((p: any) => p.sku === 'HS-354C-WHITE-35M-PU/PU-S1 SRC');
+    expect(sneaker).toBeDefined();
+    expect(sneaker.model).toBe('HS-354C');
+    expect(sneaker.department).toBe('ESD Series');
+    expect(sneaker.imagePaths[0]).toStartWith('/api/media/images/');
+
+    response = await api(`/api/products/${sneaker.id}`);
+    expect((await response.json()).sku).toBe(sneaker.sku);
+    response = await api(sneaker.imagePaths[0]);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('image/jpeg');
+    response = await api(sneaker.downloads.find((d: any) => d.type === 'certificate').url);
+    expect(response.headers.get('content-type')).toBe('application/pdf');
+  });
+
+  it('keeps a certificate file shared with seed products when another product using it is deleted', async () => {
+    const products = await (await api('/api/products')).json();
+    const seeded = products.find((p: any) => p.sku === 'HS-138C-BLACK-1G-EVA/RUBBER-S3 SRC-SK');
+    const mediaUrl: string = seeded.downloads.find((d: any) => d.type === 'certificate').url;
+    const storedPath = mediaUrl.replace('/api/media/', '/files/');
+
+    let response = await api(`${prefix}/product`, 'POST', {
+      sku: `TEST-SHARED-${crypto.randomUUID()}`, product_name: 'Shared certificate test', series: 'ESD Series',
+      main_image: [], certificate_pdf: storedPath, specification: {}, size_weights: {}, other: {}, certificate_codes: []
+    });
+    expect(response.status).toBe(201);
+    const created = await response.json();
+    response = await api(`${prefix}/product`, 'DELETE', { product_id: created.product_id });
+    expect(response.status).toBe(204);
+
+    response = await api(mediaUrl);
+    expect(response.status).toBe(200);
+  });
+
+  it('keeps stored files private unless a product references them', async () => {
+    expect((await api('/api/media/images/not-referenced.jpg')).status).toBe(404);
+    expect((await api('/api/media/secrets/x.pdf')).status).toBe(404);
+    expect((await api('/api/products/not-a-uuid')).status).toBe(404);
+  });
+
   it('creates, lists, updates, and deletes a series through HTTP handlers', async () => {
     const code = `TEST-${crypto.randomUUID()}`;
     let response = await api(`${prefix}/series`, 'POST', { series_code: code, series_name: 'Test series' });
@@ -50,6 +103,37 @@ describe('API integration', () => {
     expect((await response.json()).series_name).toBe('Updated series');
     response = await api(`${prefix}/series`, 'DELETE', { series_code: code });
     expect(response.status).toBe(204);
+  });
+
+  it('saves the home slider order and serves it publicly', async () => {
+    const before: string[] = await (await api('/api/home-slides')).json();
+    const products = await (await api('/api/products')).json();
+    const ids = products.slice(0, 2).map((p: any) => p.id).reverse();
+    try {
+      const saved = token;
+      token = '';
+      expect((await api(`${prefix}/home-slides`, 'PUT', { product_ids: ids })).status).toBe(401);
+      token = saved;
+
+      let response = await api(`${prefix}/home-slides`, 'PUT', { product_ids: ids });
+      expect(response.status).toBe(200);
+      expect((await response.json()).map((row: any) => row.product_id)).toEqual(ids);
+      expect(await (await api('/api/home-slides')).json()).toEqual(ids);
+
+      response = await api(`${prefix}/home-slides`, 'PUT', { product_ids: ['not-a-uuid'] });
+      expect(response.status).toBe(400);
+      expect(await (await api('/api/home-slides')).json()).toEqual(ids);
+    } finally {
+      await api(`${prefix}/home-slides`, 'PUT', { product_ids: before });
+    }
+  });
+
+  it('lists catalogues publicly and returns 404 for unknown ones', async () => {
+    const response = await api('/api/catalogues');
+    expect(response.status).toBe(200);
+    expect(Array.isArray(await response.json())).toBe(true);
+    expect((await api(`/api/catalogues/${crypto.randomUUID()}/pdf`)).status).toBe(404);
+    expect((await api('/api/catalogues/not-a-uuid/cover')).status).toBe(404);
   });
 
   it('creates, lists, updates, and deletes a certificate type through HTTP handlers', async () => {

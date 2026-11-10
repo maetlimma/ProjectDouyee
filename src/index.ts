@@ -7,6 +7,7 @@ import { basename, join } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
 import { apiV1 } from './routes/v1';
 import { authRoutes } from './routes/auth.routes';
+import { publicRoutes } from './routes/public.routes';
 import { bootstrapAdminFromEnv } from './services/admins';
 import { fileResponse, readStoredFile } from './services/files';
 
@@ -77,6 +78,7 @@ export const app = new Elysia()
   .get('/health', () => ({ status: 'ok' }))
   .use(authRoutes)
   .use(apiV1)
+  .use(publicRoutes)
   .all('/api/*', ({ request, set }) => {
     set.status = 404;
     return { error: { code: 'NOT_FOUND', message: `API route not found: ${request.method} ${new URL(request.url).pathname}` } };
