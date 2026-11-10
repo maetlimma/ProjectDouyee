@@ -3,11 +3,11 @@ import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useLocation }
 import { I18nProvider, useI18n, Language } from './i18n';
 import HomeView from './views/HomeView';
 import ProductsView from './views/ProductsView';
-import ProductDetailView from './views/ProductDetailView';
+import { ProductRedirect, ProductSheetHost, useProductLink } from './ProductSheet';
 import ContactView from './views/ContactView';
 import AboutView from './views/AboutView';
 import CataloguesView from './views/CataloguesView';
-import { useCatalog, inSector, CATALOGUES } from './catalog';
+import { useCatalog, useCatalogues, inSector } from './catalog';
 import SeriesBadge from './SeriesBadge';
 import { Search, Key } from 'lucide-react';
 
@@ -16,6 +16,7 @@ const HeaderSearch: React.FC = () => {
   const { lang } = useI18n();
   const navigate = useNavigate();
   const { products } = useCatalog();
+  const productLink = useProductLink();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLFormElement>(null);
@@ -47,7 +48,7 @@ const HeaderSearch: React.FC = () => {
       <input
         type="text"
         value={query}
-        placeholder={lang === 'th' ? 'ค้นหา...' : lang === 'zh' ? '搜索...' : 'Search...'}
+        placeholder={lang === 'th' ? 'ค้นหา...' : 'Search...'}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
@@ -63,7 +64,7 @@ const HeaderSearch: React.FC = () => {
           {results.map((p) => (
             <Link
               key={p.id}
-              to={`/products/${p.id}`}
+              to={productLink(p.id)}
               className="site-search-result"
               onClick={() => {
                 setOpen(false);
@@ -84,8 +85,7 @@ const LangSwitch: React.FC = () => {
   const { lang, changeLanguage } = useI18n();
   const options: { code: Language; label: string }[] = [
     { code: 'th', label: 'TH' },
-    { code: 'en', label: 'EN' },
-    { code: 'zh', label: '中' }
+    { code: 'en', label: 'EN' }
   ];
   return (
     <div className="site-lang">
@@ -106,6 +106,7 @@ const ProductsMenu: React.FC = () => {
   const { lang, t } = useI18n();
   const location = useLocation();
   const { products, sectors } = useCatalog();
+  const productLink = useProductLink();
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [location]);
@@ -132,7 +133,7 @@ const ProductsMenu: React.FC = () => {
                 <ul className="site-mega-list">
                   {items.map((p) => (
                     <li key={p.id}>
-                      <Link to={`/products/${p.id}`}>{p.sku}</Link>
+                      <Link to={productLink(p.id)}>{p.sku}</Link>
                     </li>
                   ))}
                   {items.length === 0 && <li className="site-mega-empty">-</li>}
@@ -167,18 +168,18 @@ const AppHeader: React.FC = () => {
         </div>
         <div className="site-nav-item">
           <NavLink to="/about" className={navClass}>
-            {lang === 'th' ? 'เกี่ยวกับเรา' : lang === 'zh' ? '关于我们' : 'About us'}
+            {lang === 'th' ? 'เกี่ยวกับเรา' : 'About us'}
           </NavLink>
         </div>
         <ProductsMenu />
         <div className="site-nav-item">
           <NavLink to="/catalogues" className={navClass}>
-            {lang === 'th' ? 'แคตตาล็อก' : lang === 'zh' ? '产品目录' : 'Catalogues'}
+            {lang === 'th' ? 'แคตตาล็อก' : 'Catalogues'}
           </NavLink>
         </div>
         <div className="site-nav-item">
           <NavLink to="/contact" className={navClass}>
-            {lang === 'th' ? 'ติดต่อเรา' : lang === 'zh' ? '联系我们' : 'Contact'}
+            {lang === 'th' ? 'ติดต่อเรา' : 'Contact'}
           </NavLink>
         </div>
       </nav>
@@ -191,29 +192,35 @@ const MAP_QUERY = '75/27 Moo 11 Phaholyothin Rd, Khlong Nueng, Khlong Luang, Pat
 const AppFooter: React.FC = () => {
   const { lang } = useI18n();
   const { sectors } = useCatalog();
+  const { catalogues } = useCatalogues();
+  const th = lang === 'th';
 
   return (
     <footer className="site-shell site-footer">
       <img className="site-footer-logo" src="/assets/douyee-logo.png" alt="Dou Yee Enterprises" />
       <div className="site-footer-grid">
         <div>
-          <h4>Contact</h4>
-          <p>
-            DOU YEE ENTERPRISES (THAILAND) CO.,LTD<br />
-            75/27 Moo 11, Phaholyothin Rd, T.Klongnueng,<br />
-            A.Klongluang, Pathumthani 12120 , Thailand<br />
-            Tel: +662 529 0979<br />
-            E-mail : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
-          </p>
-          <p style={{ marginTop: '0.75rem' }}>
-            บริษัท ดาวี เอ็นเตอร์ไพรส์ (ประเทศไทย) จำกัด<br />
-            75/27 หมู่ที่ 11 ถนนพหลโยธิน ตำบลคลองหนึ่ง<br />
-            อำเภอคลองหลวง จังหวัดปทุมธานี 12120<br />
-            E-mail : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
-          </p>
+          <h4>{th ? 'ติดต่อเรา' : 'Contact'}</h4>
+          {th ? (
+            <p>
+              บริษัท ดาวยี เอนเตอร์ไพรส์ (ประเทศไทย) จำกัด<br />
+              75/27 หมู่ที่ 11 ถนนพหลโยธิน ตำบลคลองหนึ่ง<br />
+              อำเภอคลองหลวง จังหวัดปทุมธานี 12120<br />
+              โทร: +662 529 0979<br />
+              อีเมล : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
+            </p>
+          ) : (
+            <p>
+              DOU YEE ENTERPRISES (THAILAND) CO.,LTD<br />
+              75/27 Moo 11, Phaholyothin Rd, T.Klongnueng,<br />
+              A.Klongluang, Pathumthani 12120 , Thailand<br />
+              Tel: +662 529 0979<br />
+              E-mail : <a href="mailto:panjaruts@douyee.co.th">panjaruts@douyee.co.th</a>
+            </p>
+          )}
         </div>
         <div>
-          <h4><Link to="/about" style={{ fontSize: 'inherit', color: 'inherit' }}>About us</Link></h4>
+          <h4><Link to="/about" style={{ fontSize: 'inherit', color: 'inherit' }}>{th ? 'เกี่ยวกับเรา' : 'About us'}</Link></h4>
           <iframe
             className="site-footer-map"
             title="Dou Yee Thailand location"
@@ -223,7 +230,7 @@ const AppFooter: React.FC = () => {
         </div>
         {/* Kept in the desktop grid when empty so the columns stay in place; hidden when stacked */}
         <div className={sectors.length === 0 ? 'site-footer-empty' : undefined}>
-          <h4>Products</h4>
+          <h4>{th ? 'สินค้า' : 'Products'}</h4>
           <ul>
             {sectors.map((s) => (
               <li key={s.id}>
@@ -233,19 +240,23 @@ const AppFooter: React.FC = () => {
           </ul>
         </div>
         <div>
-          <h4>Catalogues</h4>
+          <h4>{th ? 'แคตตาล็อก' : 'Catalogues'}</h4>
           <ul>
-            {CATALOGUES.map((c) => (
-              <li key={c}>{c}</li>
+            {catalogues.slice(0, 4).map((c) => (
+              <li key={c.id}>
+                <a href={c.pdf} target="_blank" rel="noopener noreferrer">{c.name}</a>
+              </li>
             ))}
           </ul>
           <p style={{ marginTop: '0.75rem' }}>
-            <Link to="/catalogues">&lt;more&gt;</Link>
+            <Link to="/catalogues">{th ? '<ดูเพิ่มเติม>' : '<more>'}</Link>
           </p>
         </div>
       </div>
       <p className="site-copyright">
-        Copyright DOU YEE ENTERPRISES (THAILAND) CO.,LTD. All rights reserved.
+        {th
+          ? 'สงวนลิขสิทธิ์ บริษัท ดาวยี เอนเตอร์ไพรส์ (ประเทศไทย) จำกัด'
+          : 'Copyright DOU YEE ENTERPRISES (THAILAND) CO.,LTD. All rights reserved.'}
         <a href="/admin/login" title="Admin Portal">
           <Key size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
         </a>
@@ -266,13 +277,14 @@ const App: React.FC = () => {
                 <Route path="/" element={<HomeView />} />
                 <Route path="/about" element={<AboutView />} />
                 <Route path="/products" element={<ProductsView />} />
-                <Route path="/products/:id" element={<ProductDetailView />} />
+                <Route path="/products/:id" element={<ProductRedirect />} />
                 <Route path="/catalogues" element={<CataloguesView />} />
                 <Route path="/contact" element={<ContactView />} />
               </Routes>
             </div>
           </main>
           <AppFooter />
+          <ProductSheetHost />
         </div>
       </BrowserRouter>
     </I18nProvider>

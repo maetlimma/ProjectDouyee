@@ -1,35 +1,112 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { useCatalog, inSector, CatalogProduct, CatalogSector } from '../catalog';
+import {
+  useCatalog,
+  inSector,
+  badgeImage,
+  seriesArt,
+  groupByModel,
+  cardSpan,
+  layoutGrid,
+  splitHero,
+  CardGroup,
+  CatalogProduct,
+  CatalogSector
+} from '../catalog';
 import SeriesBadge from '../SeriesBadge';
-import ProductSheet from '../ProductSheet';
+import { ITEM_PARAM } from '../ProductSheet';
 
-const ProductCard: React.FC<{ product: CatalogProduct; onOpen: () => void }> = ({ product, onOpen }) => {
+const SpecLines: React.FC<{ product: CatalogProduct }> = ({ product }) => {
   const { lang } = useI18n();
-  const [main, ...extra] = product.imagePaths || [];
-
+  const lines = product.spec && product.spec.length > 0 ? product.spec : [product.title[lang] || product.title.en];
   return (
-    <button type="button" className="site-card" onClick={onOpen}>
-      <span className="site-card-label">{product.sku}</span>
-      <div className="site-card-img">
-        {main ? (
-          <img src={main} alt={product.title[lang] || product.title.en} loading="lazy" />
-        ) : (
-          <span className="site-card-placeholder">EUROSTAT</span>
-        )}
-      </div>
-      <p className="site-card-spec">{product.title[lang] || product.title.en}</p>
-      {extra.length > 0 && (
-        <div className="site-card-thumbs">
-          {extra.slice(0, 4).map((src) => (
-            <img key={src} src={src} alt="" loading="lazy" />
-          ))}
-        </div>
-      )}
-    </button>
+    <p className="site-card-spec">
+      {lines.map((line, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <br />}
+          {line}
+        </React.Fragment>
+      ))}
+    </p>
   );
 };
+
+const PartThumbs: React.FC<{ product: CatalogProduct }> = ({ product }) => {
+  const parts = product.parts ?? product.imagePaths.slice(1);
+  if (parts.length === 0) return null;
+  return (
+    <div className="site-card-thumbs">
+      {parts.slice(0, 4).map((src) => (
+        <img key={src} src={src} alt="" loading="lazy" />
+      ))}
+    </div>
+  );
+};
+
+const ShoeImage: React.FC<{ product: CatalogProduct }> = ({ product }) => {
+  const { lang } = useI18n();
+  const main = product.imagePaths[0];
+  return (
+    <div className="site-card-img">
+      {main ? (
+        <img src={main} alt={product.title[lang] || product.title.en} loading="lazy" />
+      ) : (
+        <span className="site-card-placeholder">EUROSTAT</span>
+      )}
+    </div>
+  );
+};
+
+// One card per model; variants (colour, height) share the card and each opens its own data sheet
+const ProductCard: React.FC<{ group: CardGroup; onOpen: (p: CatalogProduct) => void }> = ({ group, onOpen }) => {
+  const [first] = group.items;
+  const span = cardSpan(group);
+
+  if (group.items.length === 1) {
+    return (
+      <button type="button" className="site-card" onClick={() => onOpen(first)}>
+        <span className="site-card-label">{group.model}</span>
+        <ShoeImage product={first} />
+        <SpecLines product={first} />
+        <PartThumbs product={first} />
+      </button>
+    );
+  }
+
+  return (
+    <div className={`site-card site-card-group span-${span}`}>
+      <span className="site-card-label">{group.model}</span>
+      <div className="site-card-variants">
+        {group.items.map((item) => (
+          <button key={item.id} type="button" className="site-card-variant" onClick={() => onOpen(item)}>
+            <ShoeImage product={item} />
+            {item.variant && <span className="site-card-variant-name">{item.variant}</span>}
+          </button>
+        ))}
+      </div>
+      <SpecLines product={first} />
+      <PartThumbs product={first} />
+    </div>
+  );
+};
+
+const CardGrid: React.FC<{ groups: CardGroup[]; photos: string[]; onOpen: (p: CatalogProduct) => void; className?: string }> = ({
+  groups,
+  photos,
+  onOpen,
+  className = 'site-grid'
+}) => (
+  <div className={className}>
+    {layoutGrid(groups, photos).map((cell) =>
+      cell.kind === 'card' ? (
+        <ProductCard key={cell.group.model} group={cell.group} onOpen={onOpen} />
+      ) : (
+        <div key={cell.src} className={`site-photo-tile span-${cell.span}`} style={{ backgroundImage: `url(${cell.src})` }} />
+      )
+    )}
+  </div>
+);
 
 const SeriesSection: React.FC<{
   title: string;
@@ -39,23 +116,32 @@ const SeriesSection: React.FC<{
   onOpen: (p: CatalogProduct) => void;
 }> = ({ title, sector, badge, products, onOpen }) => {
   const { lang } = useI18n();
+  const groups = groupByModel(products);
+  const art = sector ? seriesArt(sector) : null;
+  // A known series without emblem artwork (Basic) shows no badge, as in the prototype
+  const showBadge = !sector || badgeImage(sector) !== null || !art;
+  const { hero, rest } = art ? splitHero(groups) : { hero: [], rest: groups };
+
   return (
     <section className="site-series">
-      <div className="site-series-head">
-        <SeriesBadge sector={sector} label={badge} large />
+      <div className={`site-series-head${showBadge ? '' : ' no-badge'}`}>
+        {showBadge && <SeriesBadge sector={sector} label={badge} large />}
         <h2>{title}</h2>
         <span className="site-series-bar" />
       </div>
-      {products.length > 0 ? (
-        <div className="site-grid">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} onOpen={() => onOpen(p)} />
-          ))}
+      {groups.length === 0 ? (
+        <div className="site-empty">
+          {lang === 'th' ? 'ยังไม่มีสินค้าในกลุ่มนี้' : 'No products in this series yet.'}
         </div>
       ) : (
-        <div className="site-empty">
-          {lang === 'th' ? 'ยังไม่มีสินค้าในกลุ่มนี้' : lang === 'zh' ? '该系列暂无产品' : 'No products in this series yet.'}
-        </div>
+        <>
+          {hero.length > 0 && art && (
+            <div className="site-series-hero" style={{ backgroundImage: `url(${art.background})` }}>
+              <CardGrid groups={hero} photos={[]} onOpen={onOpen} className="site-grid site-grid-hero" />
+            </div>
+          )}
+          {rest.length > 0 && <CardGrid groups={rest} photos={art?.photos ?? []} onOpen={onOpen} />}
+        </>
       )}
     </section>
   );
@@ -63,25 +149,34 @@ const SeriesSection: React.FC<{
 
 const ProductsView: React.FC = () => {
   const { lang } = useI18n();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { products, sectors, loading } = useCatalog();
-  const [openProduct, setOpenProduct] = useState<CatalogProduct | null>(null);
+  // The popup itself is rendered by ProductSheetHost in App.tsx
+  const openProduct = (p: CatalogProduct) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set(ITEM_PARAM, p.id);
+      return next;
+    });
 
   const category = searchParams.get('category');
   const search = (searchParams.get('search') || '').trim().toLowerCase();
 
   if (loading) {
-    return <div className="site-empty">{lang === 'th' ? 'กำลังโหลด...' : lang === 'zh' ? '加载中...' : 'Loading...'}</div>;
+    return <div className="site-empty">{lang === 'th' ? 'กำลังโหลด...' : 'Loading...'}</div>;
   }
 
   let content: React.ReactNode;
 
   if (search) {
     const matches = products.filter(
-      (p) => p.sku.toLowerCase().includes(search) || Object.values(p.title).some((v) => v && v.toLowerCase().includes(search))
+      (p) =>
+        p.sku.toLowerCase().includes(search) ||
+        (p.model || '').toLowerCase().includes(search) ||
+        Object.values(p.title).some((v) => v && v.toLowerCase().includes(search))
     );
-    const label = lang === 'th' ? 'ผลการค้นหา' : lang === 'zh' ? '搜索结果' : 'Search results';
-    content = <SeriesSection title={`${label}: "${searchParams.get('search')}"`} badge="?" products={matches} onOpen={setOpenProduct} />;
+    const label = lang === 'th' ? 'ผลการค้นหา' : 'Search results';
+    content = <SeriesSection title={`${label}: "${searchParams.get('search')}"`} badge="?" products={matches} onOpen={openProduct} />;
   } else {
     const selected = category
       ? sectors.filter((s) => s.id === category || s.name.en.toLowerCase() === category.toLowerCase())
@@ -96,11 +191,11 @@ const ProductsView: React.FC = () => {
             title={sector.name[lang] || sector.name.en}
             sector={sector}
             products={products.filter((p) => inSector(p, sector))}
-            onOpen={setOpenProduct}
+            onOpen={openProduct}
           />
         ))}
         {others.length > 0 && (
-          <SeriesSection title={lang === 'th' ? 'อื่นๆ' : lang === 'zh' ? '其他' : 'Other'} badge="+" products={others} onOpen={setOpenProduct} />
+          <SeriesSection title={lang === 'th' ? 'อื่นๆ' : 'Other'} badge="+" products={others} onOpen={openProduct} />
         )}
         {selected.length === 0 && <div className="site-empty">Series not found.</div>}
       </>
@@ -110,7 +205,6 @@ const ProductsView: React.FC = () => {
   return (
     <div className="site-panel-padded">
       {content}
-      {openProduct && <ProductSheet product={openProduct} onClose={() => setOpenProduct(null)} />}
     </div>
   );
 };

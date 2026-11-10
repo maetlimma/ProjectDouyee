@@ -19,7 +19,7 @@ const BrochureViewer: React.FC = () => {
   const coverRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  const t = (en: string, th: string, zh: string) => (lang === 'th' ? th : lang === 'zh' ? zh : en);
+  const t = (en: string, th: string) => (lang === 'th' ? th : en);
 
   // The book is created on first open and kept alive while hidden, because page-flip
   // never stops its animation loop and recreating it per open would leak loops.
@@ -88,7 +88,7 @@ const BrochureViewer: React.FC = () => {
     setOpen(true);
   };
 
-  const title = t('Eurostat Safety Shoes Brochure', 'โบรชัวร์รองเท้าเซฟตี้ Eurostat', 'Eurostat 安全鞋手册');
+  const title = t('Eurostat Safety Shoes Brochure', 'โบรชัวร์รองเท้าเซฟตี้ Eurostat');
 
   return (
     <>
@@ -96,7 +96,7 @@ const BrochureViewer: React.FC = () => {
         <img src={PAGE_URLS[0]} alt={title} />
         <span className="site-brochure-hint">
           <BookOpen size={16} aria-hidden="true" />
-          {t('Open brochure', 'เปิดโบรชัวร์', '打开手册')}
+          {t('Open brochure', 'เปิดโบรชัวร์')}
         </span>
       </button>
 
@@ -112,12 +112,12 @@ const BrochureViewer: React.FC = () => {
             if (e.target === e.currentTarget) close();
           }}
         >
-          <button ref={closeRef} type="button" className="site-brochure-close" onClick={close} aria-label={t('Close', 'ปิด', '关闭')}>
+          <button ref={closeRef} type="button" className="site-brochure-close" onClick={close} aria-label={t('Close', 'ปิด')}>
             <X size={22} aria-hidden="true" />
           </button>
           <div ref={hostRef} className="site-brochure-host" />
           <div className="site-brochure-controls">
-            <button type="button" onClick={() => bookRef.current?.flipPrev()} disabled={page === 0} aria-label={t('Previous page', 'หน้าก่อนหน้า', '上一页')}>
+            <button type="button" onClick={() => bookRef.current?.flipPrev()} disabled={page === 0} aria-label={t('Previous page', 'หน้าก่อนหน้า')}>
               <ChevronLeft size={20} aria-hidden="true" />
             </button>
             <span aria-live="polite">{brochurePageLabel(page, BROCHURE_PAGES.count, portrait)}</span>
@@ -125,7 +125,7 @@ const BrochureViewer: React.FC = () => {
               type="button"
               onClick={() => bookRef.current?.flipNext()}
               disabled={brochureIsLastView(page, BROCHURE_PAGES.count, portrait)}
-              aria-label={t('Next page', 'หน้าถัดไป', '下一页')}
+              aria-label={t('Next page', 'หน้าถัดไป')}
             >
               <ChevronRight size={20} aria-hidden="true" />
             </button>

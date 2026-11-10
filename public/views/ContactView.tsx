@@ -19,7 +19,7 @@ const ContactView: React.FC = () => {
     <div className="site-panel-padded site-contact">
       <img className="site-contact-art" src="/assets/contact-illustration.png" alt="" />
       <div className="site-contact-box">
-        <h2>{lang === 'th' ? 'ติดต่อเรา' : lang === 'zh' ? '联系我们' : 'Get in touch with us'}</h2>
+        <h2>{lang === 'th' ? 'ติดต่อเรา' : 'Get in touch with us'}</h2>
         <div className="site-contact-addresses">
           <p>
             DOU YEE ENTERPRISES (THAILAND) CO.,LTD<br />
@@ -30,7 +30,7 @@ const ContactView: React.FC = () => {
           </p>
           <p>
             <strong>
-              บริษัท ดาวี เอ็นเตอร์ไพรส์ (ประเทศไทย) จำกัด<br />
+              บริษัท ดาวยี เอนเตอร์ไพรส์ (ประเทศไทย) จำกัด<br />
               75/27 หมู่ที่ 11 ถนนพหลโยธิน ตำบลคลองหนึ่ง<br />
               อำเภอคลองหลวง จังหวัดปทุมธานี 12120<br />
               E-mail : <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
@@ -39,7 +39,7 @@ const ContactView: React.FC = () => {
         </div>
         {product && (
           <a className="site-contact-inquiry" href={mailto}>
-            {lang === 'th' ? 'ส่งอีเมลสอบถาม' : lang === 'zh' ? '发送咨询邮件' : 'Email an inquiry about'} {product}
+            {lang === 'th' ? 'ส่งอีเมลสอบถาม' : 'Email an inquiry about'} {product}
             {sku ? ` (${sku})` : ''}
           </a>
         )}

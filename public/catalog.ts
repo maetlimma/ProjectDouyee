@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 export interface ML {
   en: string;
-  zh: string;
   th: string;
 }
 
@@ -15,6 +14,16 @@ export interface CatalogProduct {
   imagePaths: string[];
   pdfPaths?: string[];
   downloads?: { url: string; title: ML; type: string }[];
+  brand?: string;
+  specs?: { key: ML; value: ML }[];
+  sizeWeights?: { size: string; weight: string }[];
+  certificates?: { code: string; name: string; image: string | null }[];
+  conformity?: { en: string[]; th: string[] };
+  // Products sharing a model are shown on one card, one column per variant
+  model?: string;
+  variant?: string | null;
+  spec?: string[];
+  parts?: string[];
 }
 
 export interface CatalogSector {
@@ -77,27 +86,41 @@ export function initials(text: string) {
     .toUpperCase();
 }
 
-// Short list shown in the footer
-export const CATALOGUES = [
-  'Micro Contamination Control@ Cleanroom',
-  'Cleaning Disinfection & Protection Catalogue',
-  'Advance Assembly Technology',
-  'Semiconductor Tool & Material Technology'
-];
+// Catalogues uploaded in the admin portal; cover is page 1 of the PDF
+export interface PublicCatalogue {
+  id: string;
+  name: string;
+  cover: string;
+  pdf: string;
+}
 
-// Full list for the Catalogues page; covers live in public/assets
-export const CATALOGUE_COVERS = [
-  { title: 'Micro Contamination Control @ Cleanroom', cover: '/assets/cat-1.jpg' },
-  { title: 'Cleaning Disinfection & Protection Catalogue', cover: '/assets/cat-2.jpg' },
-  { title: 'Advanced Assembly Technology', cover: '/assets/cat-3.jpg' },
-  { title: 'Semiconductor Tools & Material Technology', cover: '/assets/cat-4.jpg' },
-  { title: 'SIMCO ION', cover: '/assets/cat-5.jpg' },
-  { title: 'Electrostatic Discharge Control', cover: '/assets/cat-6.jpg' },
-  { title: 'Equipment & Accessories', cover: '/assets/cat-7.jpg' },
-  { title: 'Bonding Capillary', cover: '/assets/cat-8.jpg' },
-  { title: 'Wafer Group', cover: '/assets/cat-9.jpg' },
-  { title: 'RBS Concentrated Surfactant', cover: '/assets/cat-10.jpg' }
-];
+let cataloguesCache: Promise<PublicCatalogue[]> | null = null;
+
+export function useCatalogues() {
+  const [catalogues, setCatalogues] = useState<PublicCatalogue[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    cataloguesCache ??= fetch('/api/catalogues')
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => {
+        cataloguesCache = null;
+        return [];
+      });
+    cataloguesCache.then((list) => {
+      if (alive) {
+        setCatalogues(list);
+        setLoading(false);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return { catalogues, loading };
+}
 
 // Series artwork matched by sector name; other sectors fall back to initials
 export function badgeImage(sector: CatalogSector): string | null {
@@ -105,4 +128,77 @@ export function badgeImage(sector: CatalogSector): string | null {
   if (/\besd\b/.test(name)) return '/assets/badge-esd.png';
   if (/\be9\b/.test(name)) return '/assets/badge-e9.png';
   return null;
+}
+
+// Photos cropped from the safety-shoe booklet by scripts/build-product-seed.ts
+export interface SeriesArt {
+  background: string;
+  photos: string[];
+}
+
+export function seriesArt(sector: CatalogSector): SeriesArt | null {
+  const name = sector.name.en.toLowerCase();
+  if (/\besd\b/.test(name)) return { background: '/assets/series-esd-bg.jpg', photos: ['/assets/series-photo-1.jpg', '/assets/series-photo-2.jpg'] };
+  if (/\be9\b/.test(name)) return { background: '/assets/series-e9-bg.jpg', photos: ['/assets/series-esd-bg.jpg'] };
+  if (/\bbasic\b/.test(name)) return { background: '/assets/series-basic-bg.jpg', photos: ['/assets/series-e9-bg.jpg'] };
+  return null;
+}
+
+export interface CardGroup {
+  model: string;
+  items: CatalogProduct[];
+}
+
+// Keeps the API order; a model's variants join the card of its first variant
+export function groupByModel(products: CatalogProduct[]): CardGroup[] {
+  const groups: CardGroup[] = [];
+  const byModel = new Map<string, CardGroup>();
+  for (const product of products) {
+    const model = product.model || product.sku;
+    let group = byModel.get(model);
+    if (!group) {
+      group = { model, items: [] };
+      byModel.set(model, group);
+      groups.push(group);
+    }
+    group.items.push(product);
+  }
+  return groups;
+}
+
+export const cardSpan = (group: CardGroup) => (group.items.length > 1 ? 2 : 1);
+
+export type GridCell = { kind: 'card'; group: CardGroup } | { kind: 'photo'; src: string; span: number };
+
+// Lays cards on a 3-column grid; a gap left by a wide card that does not fit is filled with a series photo
+export function layoutGrid(groups: CardGroup[], photos: string[], columns = 3): GridCell[] {
+  const cells: GridCell[] = [];
+  let used = 0;
+  let next = 0;
+  const fill = () => {
+    const span = columns - used;
+    if (span > 0 && used > 0 && next < photos.length) cells.push({ kind: 'photo', src: photos[next++], span });
+    used = 0;
+  };
+  for (const group of groups) {
+    const span = Math.min(cardSpan(group), columns);
+    if (used + span > columns) fill();
+    cells.push({ kind: 'card', group });
+    used += span;
+    if (used === columns) used = 0;
+  }
+  fill();
+  return cells;
+}
+
+// First cards whose combined width fits one row; they sit on the series banner photo
+export function splitHero(groups: CardGroup[], columns = 3) {
+  let used = 0;
+  let count = 0;
+  for (const group of groups) {
+    if (used + cardSpan(group) > columns) break;
+    used += cardSpan(group);
+    count++;
+  }
+  return { hero: groups.slice(0, count), rest: groups.slice(count) };
 }

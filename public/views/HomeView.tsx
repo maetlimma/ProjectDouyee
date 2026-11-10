@@ -1,34 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { useCatalog } from '../catalog';
+import { CatalogProduct, useCatalog } from '../catalog';
+import { useProductLink } from '../ProductSheet';
+
+// Product ids chosen on the admin Home Slider page, in order; empty means automatic
+function useHomeSlideIds() {
+  const [ids, setIds] = useState<string[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/home-slides')
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => [])
+      .then((list: string[]) => alive && setIds(list));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return ids;
+}
 
 const INDUSTRIES = [
-  { en: 'Logistic', th: 'โลจิสติกส์', zh: '物流' },
-  { en: 'Heavy Industry', th: 'อุตสาหกรรมหนัก', zh: '重工业' },
-  { en: 'Automotive', th: 'ยานยนต์', zh: '汽车' },
-  { en: 'Aviation', th: 'การบิน', zh: '航空' }
+  { en: 'Logistic', th: 'โลจิสติกส์' },
+  { en: 'Heavy Industry', th: 'อุตสาหกรรมหนัก' },
+  { en: 'Automotive', th: 'ยานยนต์' },
+  { en: 'Aviation', th: 'การบิน' }
 ];
 
 interface Slide {
   key: string;
   image: string;
   caption?: string;
-  to?: string;
+  to?: { pathname: string; search: string };
 }
 
 const HomeView: React.FC = () => {
   const { lang } = useI18n();
   const { products } = useCatalog();
+  const slideIds = useHomeSlideIds();
+  const productLink = useProductLink();
   const [active, setActive] = useState(0);
 
-  // Brand shoe slide first, then one slide per product that has an image
+  const withImage = (p: CatalogProduct | undefined): p is CatalogProduct => Boolean(p && p.imagePaths && p.imagePaths.length > 0);
+  const chosen = (slideIds ?? []).map((id) => products.find((p) => p.id === id)).filter(withImage);
+  const showcase = chosen.length > 0 ? chosen : products.filter(withImage).slice(0, 5);
+
+  // Brand shoe slide first, then the chosen products (or the first 5 with a photo); each opens the popup
   const slides: Slide[] = [
     { key: 'brand', image: '/assets/hero-shoe.jpg' },
-    ...products
-      .filter((p) => p.imagePaths && p.imagePaths.length > 0)
-      .slice(0, 5)
-      .map((p) => ({ key: p.id, image: p.imagePaths[0], caption: p.sku, to: `/products/${p.id}` }))
+    ...(slideIds === null ? [] : showcase).map((p) => ({ key: p.id, image: p.imagePaths[0], caption: p.sku, to: productLink(p.id) }))
   ];
 
   useEffect(() => {
