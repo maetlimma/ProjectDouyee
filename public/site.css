@@ -671,6 +671,16 @@
   grid-column: span 3;
 }
 
+/* Cards in three columns with a narrower photo column on the right, as in the prototype */
+.site-grid-side {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.95fr);
+  margin-bottom: 0.75rem;
+}
+
+.site-grid-side .site-photo-tile {
+  grid-column: 4;
+}
+
 .site-card-group {
   cursor: default;
 }

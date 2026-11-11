@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { groupByModel, layoutGrid, splitHero, type CatalogProduct } from '../public/catalog';
+import { cardSpan, groupByModel, layoutGrid, splitHero, takeRows, type CatalogProduct } from '../public/catalog';
 
 const seedDir = join(import.meta.dir, '../seed/products');
 const manifest = (await Bun.file(join(seedDir, 'manifest.json')).json()) as { products: Record<string, any>[] };
@@ -73,5 +73,30 @@ describe('series card layout', () => {
   it('leaves the gap empty when no photo is left', () => {
     const groups = groupByModel([product('A'), product('B'), product('W', 'W-1'), product('W', 'W-2')]);
     expect(layoutGrid(groups, []).every((c) => c.kind === 'card')).toBe(true);
+  });
+});
+
+describe('series side photos', () => {
+  const groups = () =>
+    groupByModel([
+      product('T', 'T-1'), product('T', 'T-2'), product('T', 'T-3'),
+      product('S'), product('W', 'W-1'), product('W', 'W-2'),
+      product('X')
+    ]);
+
+  it('gives a model with three variants the whole row', () => {
+    expect(cardSpan(groups()[0])).toBe(3);
+  });
+
+  it('takes the cards of whole rows beside the photos and leaves the rest', () => {
+    const { side, rest } = takeRows(groups(), 2);
+    expect(side.map((g) => g.model)).toEqual(['T', 'S', 'W']);
+    expect(rest.map((g) => g.model)).toEqual(['X']);
+  });
+
+  it('does not take a part-filled row', () => {
+    const { side, rest } = takeRows(groups().slice(0, 2), 2);
+    expect(side.map((g) => g.model)).toEqual(['T']);
+    expect(rest.map((g) => g.model)).toEqual(['S']);
   });
 });

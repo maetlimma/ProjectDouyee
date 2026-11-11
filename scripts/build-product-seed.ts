@@ -5,6 +5,7 @@ import * as mupdf from 'mupdf';
 import { createHash } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { buildSeriesPhotos } from './build-series-photos';
 
 const root = join(import.meta.dir, '..');
 const webDir = join(root, 'reference/Product/Web');
@@ -394,6 +395,7 @@ for (const [index, row] of ROWS.entries()) {
 
 await Bun.write(join(seedDir, 'manifest.json'), JSON.stringify({ products }, null, 2) + '\n');
 await buildArtwork();
+await buildSeriesPhotos();
 
 const count = async (dir: string) => (await readdir(dir)).length;
 console.info(`Wrote ${products.length} products, ${await count(imagesDir)} images, ${await count(documentsDir)} documents`);

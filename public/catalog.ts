@@ -133,12 +133,15 @@ export function badgeImage(sector: CatalogSector): string | null {
 // Photos cropped from the safety-shoe booklet by scripts/build-product-seed.ts
 export interface SeriesArt {
   background: string;
+  // Fill gaps left in a grid row
   photos: string[];
+  // Stacked in a right-hand column beside the first rows after the banner, one row each
+  side?: string[];
 }
 
 export function seriesArt(sector: CatalogSector): SeriesArt | null {
   const name = sector.name.en.toLowerCase();
-  if (/\besd\b/.test(name)) return { background: '/assets/series-esd-bg.jpg', photos: ['/assets/series-photo-1.jpg', '/assets/series-photo-2.jpg'] };
+  if (/\besd\b/.test(name)) return { background: '/assets/series-esd-bg.jpg', photos: [], side: ['/assets/series-esd-side-1.jpg', '/assets/series-esd-side-2.jpg'] };
   if (/\be9\b/.test(name)) return { background: '/assets/series-e9-bg.jpg', photos: ['/assets/series-esd-bg.jpg'] };
   if (/\bbasic\b/.test(name)) return { background: '/assets/series-basic-bg.jpg', photos: ['/assets/series-e9-bg.jpg'] };
   return null;
@@ -166,7 +169,31 @@ export function groupByModel(products: CatalogProduct[]): CardGroup[] {
   return groups;
 }
 
-export const cardSpan = (group: CardGroup) => (group.items.length > 1 ? 2 : 1);
+// Two variants take two columns, three or more take the whole row
+export const cardSpan = (group: CardGroup) => Math.min(group.items.length, 3);
+
+// Leading groups that fill the given number of 3-column rows without leaving a gap
+export function takeRows(groups: CardGroup[], rows: number, columns = 3) {
+  let used = 0;
+  let row = 0;
+  let count = 0;
+  for (const group of groups) {
+    const span = Math.min(cardSpan(group), columns);
+    if (used + span > columns) break;
+    used += span;
+    count++;
+    if (used === columns) {
+      used = 0;
+      if (++row === rows) break;
+    }
+  }
+  // Drop a trailing part-filled row
+  if (used > 0) {
+    let back = used;
+    while (back > 0) back -= Math.min(cardSpan(groups[--count]), columns);
+  }
+  return { side: groups.slice(0, count), rest: groups.slice(count) };
+}
 
 export type GridCell = { kind: 'card'; group: CardGroup } | { kind: 'photo'; src: string; span: number };
 

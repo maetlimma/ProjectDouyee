@@ -10,6 +10,7 @@ import {
   cardSpan,
   layoutGrid,
   splitHero,
+  takeRows,
   CardGroup,
   CatalogProduct,
   CatalogSector
@@ -120,7 +121,9 @@ const SeriesSection: React.FC<{
   const art = sector ? seriesArt(sector) : null;
   // A known series without emblem artwork (Basic) shows no badge, as in the prototype
   const showBadge = !sector || badgeImage(sector) !== null || !art;
-  const { hero, rest } = art ? splitHero(groups) : { hero: [], rest: groups };
+  const { hero, rest: afterHero } = art ? splitHero(groups) : { hero: [], rest: groups };
+  const sidePhotos = art?.side ?? [];
+  const { side, rest } = sidePhotos.length > 0 ? takeRows(afterHero, sidePhotos.length) : { side: [], rest: afterHero };
 
   return (
     <section className="site-series">
@@ -138,6 +141,16 @@ const SeriesSection: React.FC<{
           {hero.length > 0 && art && (
             <div className="site-series-hero" style={{ backgroundImage: `url(${art.background})` }}>
               <CardGrid groups={hero} photos={[]} onOpen={onOpen} className="site-grid site-grid-hero" />
+            </div>
+          )}
+          {side.length > 0 && (
+            <div className="site-grid site-grid-side">
+              {sidePhotos.slice(0, Math.ceil(side.reduce((n, g) => n + cardSpan(g), 0) / 3)).map((src, i) => (
+                <div key={src} className="site-photo-tile" style={{ backgroundImage: `url(${src})`, gridRow: i + 1 }} />
+              ))}
+              {side.map((group) => (
+                <ProductCard key={group.model} group={group} onOpen={onOpen} />
+              ))}
             </div>
           )}
           {rest.length > 0 && <CardGrid groups={rest} photos={art?.photos ?? []} onOpen={onOpen} />}
