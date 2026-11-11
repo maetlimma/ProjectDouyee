@@ -116,7 +116,7 @@ const LoginView: React.FC = () => {
           {!challengeToken ? (
             <form className="ac-login-form" onSubmit={handleCredentialsSubmit}>
               <label className="ac-login-field">
-                <span>Corporate email</span>
+                <span>Email</span>
                 <div>
                   <Mail size={16} />
                   <input type="email" required autoComplete="username" placeholder="admin@douyee.com" value={email} onChange={(e) => setEmail(e.target.value)} />

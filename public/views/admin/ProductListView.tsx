@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, Award, Box, Check, CheckSquare, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
@@ -64,7 +64,11 @@ function SeriesPagination({
             type="button"
             className="ac-page-btn"
             disabled={currentPage <= 1}
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => {
+              if (currentPage > 1) {
+                onPageChange(currentPage - 1);
+              }
+            }}
             aria-label="Previous page"
             title="Previous page"
           >
@@ -98,7 +102,11 @@ function SeriesPagination({
             type="button"
             className="ac-page-btn"
             disabled={currentPage >= totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => {
+              if (currentPage < totalPages) {
+                onPageChange(currentPage + 1);
+              }
+            }}
             aria-label="Next page"
             title="Next page"
           >
@@ -131,6 +139,55 @@ export function ProductList() {
 
   // Per-series pagination state: Record<seriesName, currentPage>
   const [seriesPages, setSeriesPages] = useState<Record<string, number>>({});
+  const seriesRefs = useRef<Record<string, HTMLElement | null>>({});
+  const contentRefs = useRef<Record<string, HTMLElement | null>>({});
+  const prevHeightsRef = useRef<Record<string, number>>({});
+
+  const handlePageChange = (seriesName: string, newPage: number) => {
+    const contentEl = contentRefs.current[seriesName];
+    if (contentEl) {
+      prevHeightsRef.current[seriesName] = contentEl.offsetHeight;
+    }
+    const seriesEl = seriesRefs.current[seriesName];
+    if (seriesEl) {
+      const topbarOffset = 78; // 68px fixed topbar + 10px visual breathing room
+      const targetScrollY = Math.max(0, Math.round(window.scrollY + seriesEl.getBoundingClientRect().top - topbarOffset));
+      window.scrollTo({
+        top: targetScrollY,
+        behavior: 'smooth'
+      });
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: targetScrollY,
+          behavior: 'smooth'
+        });
+      });
+    }
+    setSeriesPages((prev) => ({ ...prev, [seriesName]: newPage }));
+  };
+
+  useLayoutEffect(() => {
+    Object.keys(prevHeightsRef.current).forEach((seriesName) => {
+      const prevHeight = prevHeightsRef.current[seriesName];
+      delete prevHeightsRef.current[seriesName];
+      const el = contentRefs.current[seriesName];
+      if (el && prevHeight > 0) {
+        const newHeight = el.offsetHeight;
+        if (newHeight > 0 && Math.abs(newHeight - prevHeight) > 4) {
+          el.animate(
+            [
+              { height: `${prevHeight}px` },
+              { height: `${newHeight}px` }
+            ],
+            {
+              duration: 380,
+              easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+            }
+          );
+        }
+      }
+    });
+  }, [seriesPages]);
 
   // Reset pagination when search query or filter changes
   useEffect(() => {
@@ -472,7 +529,7 @@ export function ProductList() {
       {/* Cockpit Metric Matrix Strip */}
       <div className="ac-cockpit-metrics" role="region" aria-label="Product Stats">
         <div className="ac-cockpit-stat-cell">
-          <span className="ac-cockpit-stat-label">TOTAL SKUs</span>
+          <span className="ac-cockpit-stat-label">TOTAL MODELS</span>
           <div className="ac-cockpit-stat-val">
             <strong>{productCount}</strong>
             <small>Active units</small>
@@ -509,7 +566,7 @@ export function ProductList() {
             ref={searchInputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search SKU, name, or spec..."
+            placeholder="Search Model, name, or spec..."
           />
           {query && (
             <button type="button" className="ac-search-clear" onClick={() => setQuery('')}>
@@ -602,7 +659,11 @@ export function ProductList() {
               const sortDir = sort?.dir;
 
               return (
-                <section className="ac-series-group" key={group.series}>
+                <section
+                  className="ac-series-group"
+                  key={group.series}
+                  ref={(el) => { seriesRefs.current[group.series] = el; }}
+                >
                   <div className="ac-series-heading">
                     <div className="ac-series-symbol">{initials(group.series)}</div>
                     <div>
@@ -624,7 +685,11 @@ export function ProductList() {
                     )}
                   </div>
 
-                  {viewMode === 'table' ? (
+                  <div
+                    className="ac-series-content"
+                    ref={(el) => { contentRefs.current[group.series] = el; }}
+                  >
+                    {viewMode === 'table' ? (
                     <div className="ac-table-card">
                       <div className="ac-table-scroll">
                         <table className="ac-table ac-cockpit-table">
@@ -650,9 +715,9 @@ export function ProductList() {
                                   type="button"
                                   className={`ac-th-sort ${sortKey === 'sku' ? 'active' : ''}`}
                                   onClick={() => handleSortSeries(group.series, 'sku')}
-                                  title={`Sort ${group.series} by SKU (${sortKey === 'sku' && sortDir === 'asc' ? 'Descending' : 'Ascending'})`}
+                                  title={`Sort ${group.series} by Model (${sortKey === 'sku' && sortDir === 'asc' ? 'Descending' : 'Ascending'})`}
                                 >
-                                  <span>SKU / CODE</span>
+                                  <span>MODEL / CODE</span>
                                   {sortKey === 'sku' ? (
                                     sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
                                   ) : (
@@ -834,7 +899,7 @@ export function ProductList() {
                       currentPage={currentPage}
                       totalPages={totalPages}
                       pageSize={PAGE_SIZE}
-                      onPageChange={(page) => setSeriesPages((prev) => ({ ...prev, [group.series]: page }))}
+                      onPageChange={(page) => handlePageChange(group.series, page)}
                     />
                   </div>
                 ) : (
@@ -969,11 +1034,12 @@ export function ProductList() {
                     currentPage={currentPage}
                     totalPages={totalPages}
                     pageSize={PAGE_SIZE}
-                    onPageChange={(page) => setSeriesPages((prev) => ({ ...prev, [group.series]: page }))}
+                    onPageChange={(page) => handlePageChange(group.series, page)}
                   />
                 </>
                 )}
-              </section>
+              </div>
+            </section>
             );
           })
           )}
@@ -1016,7 +1082,7 @@ export function ProductList() {
                   />
                   <div className="ac-inspector-meta">
                     <div className="ac-inspector-sku-box">
-                      <span className="ac-sku-label">SKU</span>
+                      <span className="ac-sku-label">MODEL</span>
                       <code className="ac-sku-code">{selectedProduct.sku}</code>
                     </div>
                     <div className="ac-inspector-series-badge">

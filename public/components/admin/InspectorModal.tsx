@@ -58,7 +58,7 @@ export function InspectorModal({
             />
             <div className="ac-inspector-meta">
               <div className="ac-inspector-sku-box">
-                <span className="ac-sku-label">SKU</span>
+                <span className="ac-sku-label">MODEL</span>
                 <code className="ac-sku-code">{product.sku}</code>
               </div>
               <div className="ac-inspector-series-badge">

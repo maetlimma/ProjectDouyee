@@ -33,9 +33,9 @@ const translations = {
   
   // Products listing
   allCategories: { en: 'All Departments', th: 'แผนกผลิตภัณฑ์ทั้งหมด' },
-  searchPlaceholder: { en: 'Search products by SKU or Title...', th: 'ค้นหาผลิตภัณฑ์ด้วยรหัส SKU หรือชื่อผลิตภัณฑ์...' },
+  searchPlaceholder: { en: 'Search products by Model or Title...', th: 'ค้นหาผลิตภัณฑ์ด้วยรหัส Model หรือชื่อผลิตภัณฑ์...' },
   noProducts: { en: 'No active products found matching criteria.', th: 'ไม่พบผลิตภัณฑ์ที่ใช้งานอยู่ตรงตามเงื่อนไข' },
-  sku: { en: 'SKU', th: 'รหัสรุ่น (SKU)' },
+  sku: { en: 'Model', th: 'รุ่น (Model)' },
   viewDetails: { en: 'View Details', th: 'ดูรายละเอียด' },
   
   // Product Detail

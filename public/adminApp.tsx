@@ -17,9 +17,6 @@ function AdminShell() {
 
   const token = localStorage.getItem('douyee_admin_token');
   const isLogin = location.pathname === '/login' || location.pathname === '/';
-  const hideFooter = ['/series', '/certificates', '/catalogues', '/users'].some(
-    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
-  );
 
   const toggleSidebar = () => {
     setSidebarCollapsed((prev) => {
@@ -222,13 +219,6 @@ function AdminShell() {
           <Route path="*" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
         </Routes>
       </main>
-
-      {!isLogin && !hideFooter && (
-        <footer className="ac-footer">
-          <span>Dou Yee · Modular Operator Cockpit</span>
-          <span>API v1 · Fast-action workbench</span>
-        </footer>
-      )}
     </div>
   );
 }

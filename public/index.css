@@ -37,6 +37,11 @@
 
 }
 
+html {
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -2642,6 +2647,7 @@ button.ac-certificate-image{appearance:none;-webkit-appearance:none;outline:0;fo
 .ac-ledger-workbench {
   position: relative;
   width: 100%;
+  padding-bottom: 50vh;
 }
 
 .ac-ledger-workbench.has-inspector {
@@ -3722,6 +3728,32 @@ select option {
 }
 
 /* Table checked row styling */
+@keyframes ac-row-fade {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ac-cockpit-table tbody tr.ac-table-row {
+  animation: ac-row-fade 0.16s ease-out;
+}
+
+.ac-cockpit-grid .ac-cockpit-card {
+  animation: ac-row-fade 0.16s ease-out;
+}
+
+.ac-series-group {
+  scroll-margin-top: 84px;
+}
+
+.ac-series-content {
+  overflow: hidden;
+  will-change: height;
+}
+
 .ac-table-row {
   cursor: pointer;
 }
@@ -4089,6 +4121,10 @@ select option {
               color var(--apple-duration-quick) var(--apple-ease),
               transform var(--apple-duration-instant) var(--apple-ease);
   will-change: transform;
+}
+
+.ac-page-btn svg {
+  pointer-events: none;
 }
 
 .ac-page-btn:hover:not(:disabled) {

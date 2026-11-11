@@ -104,7 +104,7 @@ export function HomeSliderManager() {
           </div>
           <label className="ac-slider-search">
             <Search size={14} />
-            <input className="ac-input" placeholder="Search SKU or title" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input className="ac-input" placeholder="Search Model or title" value={query} onChange={(e) => setQuery(e.target.value)} />
           </label>
           <div className="ac-slider-pick">
             {loading ? (

@@ -302,8 +302,11 @@ export function ProductEditor() {
     event.preventDefault(); setSaving(true); setError(''); setConflictData(null);
     try {
       const body = new FormData();
-      body.append('sku', form.sku.trim()); body.append('product_name', form.product_name.trim()); body.append('series', form.series);
-      body.append('brand', form.brand.trim()); body.append('title', form.title.trim());
+      body.append('sku', form.sku.trim());
+      body.append('product_name', form.sku.trim());
+      body.append('series', form.series);
+      body.append('brand', form.brand.trim());
+      body.append('title', form.title.trim());
       body.append('specification', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_th }) => [key_th, form.specification[key_th] ?? ''])))); body.append('specification_en', JSON.stringify(Object.fromEntries(specificationRows.map(({ key_en }) => [key_en, form.specification_en[key_en] ?? ''])))); body.append('size_weights', JSON.stringify(Object.fromEntries(productSizes.map((size) => [size, form.size_weights[size] ?? ''])))); body.append('other', JSON.stringify({ ...(product?.other ?? {}), conformity: { th: conformityLines(form.conformity_th), en: conformityLines(form.conformity_en) } }));
       body.append('certificate_codes', JSON.stringify(form.certificate_codes));
       body.append('main_image', JSON.stringify(mainImagePaths));
@@ -389,11 +392,11 @@ export function ProductEditor() {
     <form onSubmit={submit} className="ac-editor-layout">
       <div className="ac-editor-main">
         <section className="ac-form-card"><div className="ac-card-heading"><div className="ac-card-icon"><Box size={17} /></div><div><h2>Product details</h2><p>Core identity and series assignment</p></div></div>
-          <div className="ac-form-grid"><Field label="Product name *"><input className="ac-input" required value={form.product_name} onChange={(e) => update('product_name', e.target.value)} /></Field>
-            <Field label="SKU *"><input className="ac-input" required value={form.sku} onChange={(e) => update('sku', e.target.value)} /></Field>
+          <div className="ac-form-grid">
+            <Field label="Model *"><input className="ac-input" required value={form.sku} onChange={(e) => update('sku', e.target.value)} /></Field>
             <Field label="Series *"><select className="ac-input" required value={form.series} onChange={(e) => update('series', e.target.value)}><option value="" disabled>Select a series</option>{seriesList.map((entry) => <option key={entry.series_code} value={entry.series_code}>{entry.series_name} · {entry.series_code}</option>)}</select></Field>
             <Field label="Brand"><input className="ac-input" value={form.brand} onChange={(e) => update('brand', e.target.value)} /></Field>
-            <Field label="Title" className="ac-field-span"><input className="ac-input" value={form.title} onChange={(e) => update('title', e.target.value)} /></Field>
+            <Field label="Title"><input className="ac-input" value={form.title} onChange={(e) => update('title', e.target.value)} /></Field>
           </div>
         </section>
 
