@@ -162,7 +162,25 @@ const ProductsView: React.FC = () => {
   const category = searchParams.get('category');
   const search = (searchParams.get('search') || '').trim().toLowerCase();
 
-  if (loading) {
+  // There is no all-series page: /products opens one series, the shared item's series or the first one
+  const itemId = searchParams.get(ITEM_PARAM);
+  const itemProduct = itemId ? products.find((p) => p.id === itemId) : undefined;
+  const defaultSector =
+    (itemProduct && sectors.find((s) => inSector(itemProduct, s))) || sectors[0];
+  const needsRedirect = !loading && !category && !search && !!defaultSector;
+  React.useEffect(() => {
+    if (!needsRedirect) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('category', defaultSector.id);
+        return next;
+      },
+      { replace: true }
+    );
+  }, [needsRedirect, defaultSector, setSearchParams]);
+
+  if (loading || needsRedirect) {
     return <div className="site-empty">{lang === 'th' ? 'กำลังโหลด...' : 'Loading...'}</div>;
   }
 
@@ -180,8 +198,9 @@ const ProductsView: React.FC = () => {
   } else {
     const selected = category
       ? sectors.filter((s) => s.id === category || s.name.en.toLowerCase() === category.toLowerCase())
-      : sectors;
-    const others = category ? [] : products.filter((p) => !sectors.some((s) => inSector(p, s)));
+      : [];
+    // Only reached when no series exist; lists any products anyway
+    const others = category ? [] : products;
 
     content = (
       <>
@@ -197,7 +216,7 @@ const ProductsView: React.FC = () => {
         {others.length > 0 && (
           <SeriesSection title={lang === 'th' ? 'อื่นๆ' : 'Other'} badge="+" products={others} onOpen={openProduct} />
         )}
-        {selected.length === 0 && <div className="site-empty">Series not found.</div>}
+        {category && selected.length === 0 && <div className="site-empty">Series not found.</div>}
       </>
     );
   }
