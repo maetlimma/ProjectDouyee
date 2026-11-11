@@ -16,4 +16,7 @@ const { seedProducts } = await import('./seed-products');
 const { pool } = await import('../src/db/pool');
 const seeded = await seedProducts();
 console.info(`Product seed: ${seeded.inserted} inserted, ${seeded.refreshed} refreshed, ${seeded.copied} files restored`);
+const { seedCatalogues } = await import('./seed-catalogues');
+const catalogues = await seedCatalogues();
+console.info(`Catalogue seed: ${catalogues.inserted} inserted, ${catalogues.copied} files restored`);
 await pool.end();

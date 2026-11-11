@@ -100,3 +100,18 @@ describe('series side photos', () => {
     expect(rest.map((g) => g.model)).toEqual(['S']);
   });
 });
+
+const catalogueDir = join(import.meta.dir, '../seed/catalogues');
+const catalogues = (await Bun.file(join(catalogueDir, 'manifest.json')).json()) as { catalogues: Record<string, string>[] };
+
+describe('catalogue seed manifest', () => {
+  it('references PDFs that exist in the seed folder under servable names', () => {
+    expect(catalogues.catalogues.length).toBeGreaterThan(0);
+    for (const c of catalogues.catalogues) {
+      const match = STORED_PATH.exec(c.catalogue_pdf);
+      expect(match?.[1]).toBe('documents');
+      expect(existsSync(join(catalogueDir, 'files', match![2]))).toBe(true);
+      expect(c.catalogue_id).toMatch(/^[0-9a-f-]{36}$/);
+    }
+  });
+});

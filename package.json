@@ -13,7 +13,7 @@
     "test:email": "bun scripts/test-email.ts",
     "typecheck": "tsc --noEmit",
     "brochure:build": "bun scripts/build-brochure.ts",
-    "db:seed": "bun scripts/seed-products.ts",
+    "db:seed": "bun scripts/seed-products.ts && bun scripts/seed-catalogues.ts",
     "products:build": "bun scripts/build-product-seed.ts"
   },
   "dependencies": {
